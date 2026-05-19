@@ -264,7 +264,7 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
             </p>
 
             {/* Glowing Ticket Shell */}
-            <div className="w-full bg-gradient-to-b from-[#110c33] to-[#070417] border border-purple-400/40 rounded-2xl overflow-hidden relative shadow-[0_0_30px_rgba(168,85,247,0.25)] flex flex-col">
+            <div className="w-full bg-gradient-to-b from-[#110c33] to-[#070417] border border-purple-400/40 rounded-2xl overflow-hidden relative shadow-[0_0_30px_rgba(168,85,247,0.25)] flex flex-col print-ticket-card">
               
               {/* Ticket Top: Brand */}
               <div className="p-4 border-b border-purple-500/20 bg-purple-950/20 flex justify-between items-center">
@@ -302,14 +302,14 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                 </div>
 
                 {/* QR Code Graphic */}
-                <div className="w-28 h-28 bg-white p-2 rounded-xl border border-purple-400/30 flex items-center justify-center relative overflow-hidden shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+                <div className="w-36 h-36 bg-white p-2.5 rounded-2xl border border-purple-400/40 flex items-center justify-center relative overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.08)] shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={createdTicket?.qrCodeUrl}
                     alt="Cyber ticket QR code"
                     className="w-full h-full object-contain"
                   />
-                  <div className="absolute inset-0 border border-purple-500/10 rounded-xl pointer-events-none" />
+                  <div className="absolute inset-0 border border-purple-500/10 rounded-2xl pointer-events-none" />
                 </div>
               </div>
 

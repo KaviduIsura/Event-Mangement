@@ -78,6 +78,8 @@ import {
   Award,
   Lock,
   KeyRound,
+  Menu,
+  X,
 } from "lucide-react";
 import {
   AreaChart,
@@ -100,6 +102,7 @@ export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [passwordInput, setPasswordInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // HTML5 Live Camera QR Scanner State
   const [html5QrCodeInstance, setHtml5QrCodeInstance] = useState<any>(null);
@@ -225,6 +228,14 @@ export default function AdminDashboard() {
     try {
       setCameraError("");
       setIsScanning(true);
+      setIsCameraActive(true); // Toggle instantly to mount viewport element
+
+      // Ensure any previously initialized active stream is cleared to avoid running clashes
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.stop();
+        } catch (e) {}
+      }
 
       // Create instance pointing to div "qr-reader-viewport"
       const scanner = new html5QrCodeInstance("qr-reader-viewport");
@@ -234,10 +245,7 @@ export default function AdminDashboard() {
         { facingMode: "environment" },
         {
           fps: 10,
-          qrbox: (width: number, height: number) => {
-            const size = Math.min(width, height) * 0.75;
-            return { width: size, height: size };
-          }
+          qrbox: 240, // Highly robust static boundary box dimensions prevent startup crashes on mobile iOS/Android
         },
         (decodedText: string) => {
           setVerifyId(decodedText);
@@ -280,16 +288,15 @@ export default function AdminDashboard() {
         }
       );
 
-      setIsCameraActive(true);
       setIsScanning(false);
     } catch (err: any) {
       console.error("Camera permissions failed:", err);
       setIsScanning(false);
       setIsCameraActive(false);
-      setCameraError("Rear camera interface access blocked or unavailable.");
+      setCameraError("Camera blocked. Note: Mobile cameras require secure HTTPS connections to run!");
       toast({
         title: "Camera Matrix Failure",
-        description: "Please check webcam permissions in your browser address bar.",
+        description: "Webcam blocked or insecure HTTP context. Mobile phone camera APIs require secure HTTPS hosting (like Vercel) to initialize!",
         variant: "destructive"
       });
     }
@@ -614,23 +621,39 @@ export default function AdminDashboard() {
       <div className="flex flex-col lg:flex-row min-h-screen">
         
         {/* Sidebar Left Component */}
-        <aside className={`w-full lg:w-64 flex-shrink-0 flex flex-col justify-between p-6 border-r ${
+        <aside className={`w-full lg:w-64 flex-shrink-0 flex flex-col lg:justify-between p-4 lg:p-6 border-b lg:border-b-0 lg:border-r transition-all duration-300 ${
           theme === "dark" ? "bg-[#070417]/90 border-purple-500/10" : "bg-white border-slate-200"
         }`}>
-          <div className="space-y-8">
-            {/* Logo */}
+          {/* Mobile Brand Header */}
+          <div className="flex items-center justify-between lg:mb-8 w-full">
             <div className="flex items-center gap-2">
               <LayoutDashboard className="w-6 h-6 text-purple-400 animate-pulse" />
               <span className="font-display font-black text-lg tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
                 RHYTHM SaaS
               </span>
             </div>
+            
+            {/* Mobile Navigation Toggle Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden h-9 w-9 text-slate-400 hover:text-white rounded-xl focus:bg-purple-600/10"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5 text-purple-400" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
 
+          {/* Navigation & Controls Wrapper: Collapsible on mobile, static on desktop */}
+          <div className={`${
+            isMobileMenuOpen ? "flex animate-in fade-in slide-in-from-top-4 duration-300" : "hidden"
+          } lg:flex flex-col flex-1 justify-between mt-4 lg:mt-0 gap-6 lg:gap-8`}>
+            
             {/* Simulated navigation */}
             <div className="flex flex-col gap-2">
               <span className="text-[10px] uppercase font-mono font-bold tracking-widest text-slate-400 px-3 block mb-1">Navigation</span>
               
-              <Link href="/">
+              <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button
                   variant="ghost"
                   className="w-full justify-start text-xs uppercase tracking-wider font-semibold gap-2.5 h-10 hover:bg-purple-600/10 rounded-xl"
@@ -640,45 +663,52 @@ export default function AdminDashboard() {
                 </Button>
               </Link>
             </div>
-          </div>
 
-          {/* Sidebar Footer details */}
-          <div className="pt-6 border-t border-purple-500/10 flex flex-col gap-4">
-            {/* Theme selector */}
-            <Button
-              variant="outline"
-              onClick={toggleTheme}
-              className={`w-full h-10 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold ${
-                theme === "dark" ? "border-purple-500/20 bg-purple-950/20 hover:bg-purple-900/30 text-purple-300" : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
-              }`}
-            >
-              {theme === "dark" ? (
-                <>
-                  <Sun className="w-4 h-4 text-amber-400" />
-                  Light Mode
-                </>
-              ) : (
-                <>
-                  <Moon className="w-4 h-4 text-indigo-400" />
-                  Dark Mode
-                </>
-              )}
-            </Button>
+            {/* Sidebar Footer details */}
+            <div className="pt-6 border-t border-purple-500/10 flex flex-col gap-4">
+              {/* Theme selector */}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  toggleTheme();
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full h-10 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold ${
+                  theme === "dark" ? "border-purple-500/20 bg-purple-950/20 hover:bg-purple-900/30 text-purple-300" : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
+                }`}
+              >
+                {theme === "dark" ? (
+                  <>
+                    <Sun className="w-4 h-4 text-amber-400" />
+                    Light Mode
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-4 h-4 text-indigo-400" />
+                    Dark Mode
+                  </>
+                )}
+              </Button>
 
-            {/* Lock Dashboard Console */}
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-xs font-bold border-rose-500/20 bg-rose-950/10 hover:bg-rose-950/30 text-rose-400 border animate-pulse"
-            >
-              <Lock className="w-4 h-4 text-rose-400" />
-              Lock Terminal
-            </Button>
-            
-            <div className="flex items-center gap-2.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-              <span className="text-[10px] text-slate-400 font-mono">Live synchronization</span>
+              {/* Lock Dashboard Console */}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  handleLogout();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-xs font-bold border-rose-500/20 bg-rose-950/10 hover:bg-rose-950/30 text-rose-400 border animate-pulse"
+              >
+                <Lock className="w-4 h-4 text-rose-400" />
+                Lock Terminal
+              </Button>
+              
+              <div className="flex items-center gap-2.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                <span className="text-[10px] text-slate-400 font-mono">Live synchronization</span>
+              </div>
             </div>
+
           </div>
         </aside>
 
@@ -720,15 +750,15 @@ export default function AdminDashboard() {
 
           {/* MAIN TABS CONTAINER */}
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className={`rounded-xl border p-1 ${
+            <TabsList className={`w-full overflow-x-auto flex justify-start lg:grid lg:grid-cols-6 whitespace-nowrap rounded-xl border p-1 scrollbar-none min-w-max md:min-w-0 ${
               theme === "dark" ? "bg-[#090526]/50 border-purple-500/10" : "bg-slate-100 border-slate-200"
             }`}>
-              <TabsTrigger value="overview" className="rounded-lg text-xs font-semibold">Overview</TabsTrigger>
-              <TabsTrigger value="registrations" className="rounded-lg text-xs font-semibold">RSVPs & Tickets</TabsTrigger>
-              <TabsTrigger value="verification" className="rounded-lg text-xs font-semibold">QR Gate Check-in</TabsTrigger>
-              <TabsTrigger value="performers" className="rounded-lg text-xs font-semibold">Performers</TabsTrigger>
-              <TabsTrigger value="sponsors" className="rounded-lg text-xs font-semibold">Sponsors</TabsTrigger>
-              <TabsTrigger value="alerts" className="rounded-lg text-xs font-semibold">Broadcasts</TabsTrigger>
+              <TabsTrigger value="overview" className="rounded-lg text-xs font-semibold flex-shrink-0">Overview</TabsTrigger>
+              <TabsTrigger value="registrations" className="rounded-lg text-xs font-semibold flex-shrink-0">RSVPs & Tickets</TabsTrigger>
+              <TabsTrigger value="verification" className="rounded-lg text-xs font-semibold flex-shrink-0">QR Gate Check-in</TabsTrigger>
+              <TabsTrigger value="performers" className="rounded-lg text-xs font-semibold flex-shrink-0">Performers</TabsTrigger>
+              <TabsTrigger value="sponsors" className="rounded-lg text-xs font-semibold flex-shrink-0">Sponsors</TabsTrigger>
+              <TabsTrigger value="alerts" className="rounded-lg text-xs font-semibold flex-shrink-0">Broadcasts</TabsTrigger>
             </TabsList>
 
             {/* TAB: OVERVIEW */}
@@ -914,7 +944,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Data Table */}
-              <div className={`rounded-2xl border overflow-hidden shadow-sm ${
+              <div className={`rounded-2xl border overflow-x-auto shadow-sm ${
                 theme === "dark" ? "bg-[#090526]/40 border-purple-500/10" : "bg-white border-slate-200"
               }`}>
                 <Table>
