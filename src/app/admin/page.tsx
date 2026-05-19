@@ -125,6 +125,7 @@ export default function AdminDashboard() {
   const [verifiedTicket, setVerifiedTicket] = useState<RSVP | null>(null);
   const [scanTab, setScanTab] = useState<"camera" | "manual">("camera");
   const [isScanning, setIsScanning] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   // Form Adding states
   const [isPerfOpen, setIsPerfOpen] = useState(false);
@@ -749,16 +750,41 @@ export default function AdminDashboard() {
           </div>
 
           {/* MAIN TABS CONTAINER */}
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className={`w-full overflow-x-auto flex justify-start lg:grid lg:grid-cols-6 whitespace-nowrap rounded-xl border p-1 scrollbar-none min-w-max md:min-w-0 ${
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            
+            {/* Mobile Navigation Dropdown Select */}
+            <div className="block lg:hidden w-full mb-4">
+              <Select value={activeTab} onValueChange={setActiveTab}>
+                <SelectTrigger className={`w-full h-11 rounded-xl font-semibold text-xs uppercase tracking-wider focus:ring-0 ${
+                  theme === "dark" 
+                    ? "bg-[#090526]/80 border-purple-500/25 text-white" 
+                    : "bg-white border-slate-200 text-slate-800"
+                }`}>
+                  <SelectValue placeholder="Select Section" />
+                </SelectTrigger>
+                <SelectContent className={`${
+                  theme === "dark" ? "bg-[#0c0827] border-purple-500/30 text-white" : "bg-white border-slate-200 text-slate-800"
+                }`}>
+                  <SelectItem value="overview">📈 Overview Stats</SelectItem>
+                  <SelectItem value="registrations">🎟️ RSVPs & Tickets</SelectItem>
+                  <SelectItem value="verification">🔍 QR Gate Check-in</SelectItem>
+                  <SelectItem value="performers">🎸 Performers Lineup</SelectItem>
+                  <SelectItem value="sponsors">💎 Corporate Sponsors</SelectItem>
+                  <SelectItem value="alerts">📢 Broadcast Alerts</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Desktop Navigation TabsList */}
+            <TabsList className={`hidden lg:grid lg:grid-cols-6 rounded-xl border p-1 ${
               theme === "dark" ? "bg-[#090526]/50 border-purple-500/10" : "bg-slate-100 border-slate-200"
             }`}>
-              <TabsTrigger value="overview" className="rounded-lg text-xs font-semibold flex-shrink-0">Overview</TabsTrigger>
-              <TabsTrigger value="registrations" className="rounded-lg text-xs font-semibold flex-shrink-0">RSVPs & Tickets</TabsTrigger>
-              <TabsTrigger value="verification" className="rounded-lg text-xs font-semibold flex-shrink-0">QR Gate Check-in</TabsTrigger>
-              <TabsTrigger value="performers" className="rounded-lg text-xs font-semibold flex-shrink-0">Performers</TabsTrigger>
-              <TabsTrigger value="sponsors" className="rounded-lg text-xs font-semibold flex-shrink-0">Sponsors</TabsTrigger>
-              <TabsTrigger value="alerts" className="rounded-lg text-xs font-semibold flex-shrink-0">Broadcasts</TabsTrigger>
+              <TabsTrigger value="overview" className="rounded-lg text-xs font-semibold">Overview</TabsTrigger>
+              <TabsTrigger value="registrations" className="rounded-lg text-xs font-semibold">RSVPs & Tickets</TabsTrigger>
+              <TabsTrigger value="verification" className="rounded-lg text-xs font-semibold">QR Gate Check-in</TabsTrigger>
+              <TabsTrigger value="performers" className="rounded-lg text-xs font-semibold">Performers</TabsTrigger>
+              <TabsTrigger value="sponsors" className="rounded-lg text-xs font-semibold">Sponsors</TabsTrigger>
+              <TabsTrigger value="alerts" className="rounded-lg text-xs font-semibold">Broadcasts</TabsTrigger>
             </TabsList>
 
             {/* TAB: OVERVIEW */}
@@ -943,8 +969,8 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Data Table */}
-              <div className={`rounded-2xl border overflow-x-auto shadow-sm ${
+              {/* Desktop Data Table */}
+              <div className={`hidden md:block rounded-2xl border overflow-x-auto shadow-sm ${
                 theme === "dark" ? "bg-[#090526]/40 border-purple-500/10" : "bg-white border-slate-200"
               }`}>
                 <Table>
@@ -1025,6 +1051,80 @@ export default function AdminDashboard() {
                     )}
                   </TableBody>
                 </Table>
+              </div>
+
+              {/* Mobile Responsive Cards View */}
+              <div className="md:hidden space-y-4">
+                {filteredRSVPs.length > 0 ? (
+                  filteredRSVPs.map((row) => (
+                    <div key={row.id} className={`p-4 rounded-2xl border flex flex-col gap-3.5 transition-all duration-300 ${
+                      theme === "dark" 
+                        ? "bg-[#090526]/40 border-purple-500/10 shadow-[0_0_20px_rgba(168,85,247,0.01)]" 
+                        : "bg-white border-slate-200 shadow-sm"
+                    }`}>
+                      {/* Header: ID & Tier */}
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono font-bold text-xs text-purple-400">{row.id}</span>
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-wider ${
+                          row.ticketType === "sponsor"
+                            ? "bg-cyan-500/10 text-cyan-400 border border-cyan-400/25"
+                            : row.ticketType === "vip"
+                            ? "bg-pink-500/10 text-pink-400 border border-pink-400/25"
+                            : "bg-purple-500/10 text-purple-400 border border-purple-400/25"
+                        }`}>
+                          {row.ticketType}
+                        </span>
+                      </div>
+
+                      {/* Info: Name, Email & Support Note */}
+                      <div className="space-y-1">
+                        <div className={`font-semibold text-sm ${theme === "dark" ? "text-white" : "text-slate-800"}`}>{row.name}</div>
+                        <div className="text-[11px] text-slate-400 font-light">{row.email}</div>
+                        {row.innovationSupport && (
+                          <div className="text-[10px] text-pink-400 italic font-light mt-1.5 leading-relaxed bg-pink-500/5 p-2 rounded-lg border border-pink-500/10">
+                            &ldquo;{row.innovationSupport}&rdquo;
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer Details: Seats, Checked-in toggle, Trash action */}
+                      <div className="pt-3 border-t border-purple-500/10 flex justify-between items-center gap-2">
+                        <div className="text-xs text-slate-400">
+                          Seats: <span className={`font-bold ${theme === "dark" ? "text-white" : "text-slate-800"}`}>{row.seats}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handleCheckInToggle(row.id, row.checkedIn)}
+                            className="focus:outline-none hover:scale-105 transition-transform"
+                          >
+                            {row.checkedIn ? (
+                              <div className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-400/30 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider">
+                                <CheckCircle className="w-3 h-3" /> Checked In
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center gap-1 bg-slate-500/10 text-slate-400 border border-slate-400/30 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider">
+                                <XCircle className="w-3 h-3" /> Checked Out
+                              </div>
+                            )}
+                          </button>
+
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleDeleteRSVP(row.id)}
+                            className="text-xs text-rose-500 hover:text-rose-400 hover:bg-rose-950/20 p-2 rounded-xl h-8 w-8"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-slate-400 font-light">
+                    No ticket registrations match search criteria.
+                  </div>
+                )}
               </div>
             </TabsContent>
 
