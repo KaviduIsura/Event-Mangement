@@ -142,7 +142,7 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetModal(); else onOpenChange(open); }}>
-      <DialogContent className="max-w-lg bg-[#070417]/95 border border-purple-500/30 backdrop-blur-2xl text-white rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.15)]">
+      <DialogContent className="max-w-xl w-[95vw] max-h-[90vh] overflow-y-auto bg-[#070417]/95 border border-purple-500/30 backdrop-blur-2xl text-white rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.15)] scrollbar-thin scrollbar-thumb-purple-500/20 p-6 md:p-8">
         {step === "form" ? (
           <div className="p-1">
             <DialogHeader className="mb-6">
