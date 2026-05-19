@@ -207,11 +207,17 @@ export function getRSVPs(): RSVP[] {
 export function saveRSVP(rsvp: Omit<RSVP, "id" | "checkedIn" | "qrCodeUrl" | "createdAt">): RSVP {
   const rsvps = getRSVPs();
   const id = `RN-${Math.floor(1000 + Math.random() * 9000)}`;
+  let origin = "https://rhythm-event.vercel.app";
+  if (typeof window !== "undefined") {
+    origin = window.location.origin;
+  }
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${origin}?ticketId=${id}`)}`;
+  
   const newRsvp: RSVP = {
     ...rsvp,
     id,
     checkedIn: false,
-    qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${id}`,
+    qrCodeUrl,
     createdAt: new Date().toISOString()
   };
   

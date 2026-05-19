@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { saveRSVP, RSVP } from "@/lib/store";
+import { saveRSVP, getRSVPs, RSVP } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { Ticket, Sparkles, CheckCircle, CreditCard, Download, Users } from "lucide-react";
 import confetti from "canvas-confetti";
@@ -30,6 +30,23 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
   });
   const [createdTicket, setCreatedTicket] = useState<RSVP | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const ticketId = params.get("ticketId");
+      if (ticketId) {
+        // Find matching ticket from localStorage
+        const allRsvps = getRSVPs();
+        const matched = allRsvps.find(r => r.id.toLowerCase() === ticketId.toLowerCase());
+        if (matched) {
+          setCreatedTicket(matched);
+          setStep("ticket");
+          onOpenChange(true);
+        }
+      }
+    }
+  }, [onOpenChange]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -266,75 +283,127 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
             {/* Glowing Ticket Shell */}
             <div className="w-full bg-gradient-to-b from-[#110c33] to-[#070417] border border-purple-400/40 rounded-2xl overflow-hidden relative shadow-[0_0_30px_rgba(168,85,247,0.25)] flex flex-col print-ticket-card">
               
-              {/* Ticket Top: Brand */}
-              <div className="p-4 border-b border-purple-500/20 bg-purple-950/20 flex justify-between items-center">
-                <div>
-                  <span className="text-[10px] uppercase tracking-widest text-purple-300 font-bold block">Boarding Pass</span>
-                  <span className="text-lg font-bold font-display text-white tracking-wide">Rhythm Night 2026</span>
-                </div>
-                <div className="px-2.5 py-1 rounded-md bg-purple-500/20 border border-purple-400/30 text-[10px] uppercase font-bold tracking-wider text-purple-300">
-                  {createdTicket?.ticketType}
-                </div>
+              {/* Ticket Top: Brand & Invoice Header */}
+              <div className="p-6 border-b border-purple-500/20 bg-purple-950/20 text-center flex flex-col items-center">
+                <span className="text-[9px] uppercase tracking-[0.25em] text-purple-300 font-mono font-bold">OFFICIAL ENTRY ADMISSION RECEIPT</span>
+                <span className="text-xl md:text-2xl font-black font-display text-white tracking-widest mt-1.5 bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-white to-pink-300">
+                  RHYTHM NIGHT 2026
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono mt-1">SECURE ENCRYPTED BOARDING PASS</span>
               </div>
 
-              {/* Ticket Middle: Details & QR Code split */}
-              <div className="p-4 flex gap-4 items-center">
-                {/* Details list */}
-                <div className="flex-1 space-y-3">
+              {/* Ticket Middle: Invoice Details & Itemized Pricing List */}
+              <div className="p-6 space-y-5">
+                
+                {/* Invoice Meta */}
+                <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
-                    <span className="text-[9px] uppercase tracking-wider text-white/40 block">Holder</span>
-                    <span className="text-sm font-semibold font-display text-white">{createdTicket?.name}</span>
+                    <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">ISSUED TO (GUEST)</span>
+                    <span className="font-bold text-white text-sm block mt-0.5">{createdTicket?.name}</span>
+                    <span className="text-slate-400 text-[10px] block mt-0.5 truncate max-w-[170px]">{createdTicket?.email}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="text-[9px] uppercase tracking-wider text-white/40 block">Pass ID</span>
-                      <span className="text-xs font-mono font-bold text-cyan-300">{createdTicket?.id}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] uppercase tracking-wider text-white/40 block">Seats</span>
-                      <span className="text-xs font-semibold text-purple-300">{createdTicket?.seats} {createdTicket?.seats === 1 ? "Seat" : "Seats"}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-[9px] uppercase tracking-wider text-white/40 block">Date & Time</span>
-                    <span className="text-xs font-semibold text-white/80">Jan 16, 2026 • 19:30</span>
+                  <div className="text-right">
+                    <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">INVOICE SERIAL ID</span>
+                    <span className="font-mono font-black text-cyan-300 text-sm block mt-0.5">{createdTicket?.id}</span>
+                    <span className="text-[9px] text-slate-400 block mt-0.5">DATE: JAN 16, 2026</span>
                   </div>
                 </div>
 
-                {/* QR Code Graphic */}
-                <div className="w-36 h-36 bg-white p-2.5 rounded-2xl border border-purple-400/40 flex items-center justify-center relative overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.08)] shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={createdTicket?.qrCodeUrl}
-                    alt="Cyber ticket QR code"
-                    className="w-full h-full object-contain"
-                  />
-                  <div className="absolute inset-0 border border-purple-500/10 rounded-2xl pointer-events-none" />
+                {/* Itemized pricing table - Bill structure */}
+                <div className="border border-purple-500/15 rounded-xl overflow-hidden bg-purple-950/10">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-12 bg-purple-950/45 p-2 text-[8px] font-mono font-bold uppercase tracking-wider text-slate-300 border-b border-purple-500/20">
+                    <div className="col-span-6">ITEM DESCRIPTION</div>
+                    <div className="col-span-2 text-center">QTY</div>
+                    <div className="col-span-2 text-right">UNIT</div>
+                    <div className="col-span-2 text-right">SUBTOTAL</div>
+                  </div>
+
+                  {/* Seat ticket row */}
+                  <div className="grid grid-cols-12 p-3 text-[11px] border-b border-purple-500/10 items-center">
+                    <div className="col-span-6 font-semibold text-white capitalize flex flex-col">
+                      <span>
+                        {createdTicket?.ticketType === "sponsor" 
+                          ? "💎 Corporate Sponsor Pass" 
+                          : createdTicket?.ticketType === "vip" 
+                          ? "👑 VIP Lounge Pass" 
+                          : "🎟️ General Support Pass"}
+                      </span>
+                      <span className="text-[9px] text-slate-400 font-normal font-mono mt-0.5">Includes full hall admission</span>
+                    </div>
+                    <div className="col-span-2 text-center font-bold text-purple-300">{createdTicket?.seats}</div>
+                    <div className="col-span-2 text-right font-mono text-slate-300">
+                      ${createdTicket?.ticketType === "sponsor" ? "250.00" : createdTicket?.ticketType === "vip" ? "50.00" : "10.00"}
+                    </div>
+                    <div className="col-span-2 text-right font-mono font-bold text-white">
+                      ${((createdTicket?.seats || 1) * (createdTicket?.ticketType === "sponsor" ? 250 : createdTicket?.ticketType === "vip" ? 50 : 10)).toFixed(2)}
+                    </div>
+                  </div>
+
+                  {/* Booking Tax row */}
+                  <div className="grid grid-cols-12 p-2.5 text-[10px] text-slate-400 border-b border-purple-500/10 bg-purple-950/15">
+                    <div className="col-span-10">Booking Fee & Convenience Charge</div>
+                    <div className="col-span-2 text-right text-emerald-400 font-bold">FREE</div>
+                  </div>
+
+                  {/* Grand total row */}
+                  <div className="grid grid-cols-12 p-3 bg-purple-950/25 text-xs items-center">
+                    <div className="col-span-6 text-[9px] uppercase font-bold tracking-wider text-emerald-400 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      PAID & RSVP VALIDATED
+                    </div>
+                    <div className="col-span-4 text-right font-bold text-slate-400">TOTAL PAID:</div>
+                    <div className="col-span-2 text-right font-mono text-xs font-black text-white">
+                      ${((createdTicket?.seats || 1) * (createdTicket?.ticketType === "sponsor" ? 250 : createdTicket?.ticketType === "vip" ? 50 : 10)).toFixed(2)}
+                    </div>
+                  </div>
                 </div>
+
+                {/* Event date/location block */}
+                <div className="flex justify-between items-center bg-purple-950/10 border border-purple-500/10 p-3 rounded-xl text-xs">
+                  <div>
+                    <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">EVENT VENUE</span>
+                    <span className="text-[11px] font-semibold text-white">Rhythm Cyberdome Hall A</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">DOORS TIMING</span>
+                    <span className="text-[11px] font-semibold text-white">Jan 16, 2026 • 19:30 UTC</span>
+                  </div>
+                </div>
+
+                {createdTicket?.innovationSupport && (
+                  <div className="text-[10px] text-purple-200/50 text-center italic font-light truncate max-w-full">
+                    &ldquo;{createdTicket.innovationSupport}&rdquo;
+                  </div>
+                )}
               </div>
 
-              {/* Decorative dash line separation */}
+              {/* Tear-Off Cut Line */}
               <div className="relative h-px w-full border-t border-dashed border-purple-500/30">
                 <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#070417] border-r border-purple-500/30" />
                 <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/2 w-4 h-4 rounded-full bg-[#070417] border-l border-purple-500/30" />
               </div>
 
-              {/* Ticket Footer: Support message and decorative bars */}
-              <div className="p-4 bg-purple-950/10 flex flex-col gap-2">
-                <div className="text-[10px] text-purple-200/60 text-center italic font-light truncate max-w-full">
-                  &ldquo;{createdTicket?.innovationSupport}&rdquo;
+              {/* Large QR Display centered at the bottom */}
+              <div className="p-6 bg-purple-950/15 flex flex-col items-center gap-4 text-center">
+                <span className="text-[9px] uppercase tracking-[0.2em] text-cyan-300 font-mono font-bold block">
+                  SECURE DECRYPTION GATE PASS QR
+                </span>
+
+                {/* Large QR display container */}
+                <div className="w-48 h-48 bg-white p-3 rounded-3xl border border-purple-500/30 flex items-center justify-center relative overflow-hidden shadow-[0_0_25px_rgba(168,85,247,0.12)] shrink-0">
+                  <img
+                    src={createdTicket?.qrCodeUrl}
+                    alt="Secure entry QR code"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
-                <div className="flex justify-center items-center gap-1.5 mt-2">
-                  {Array.from({ length: 24 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="bg-purple-500/30 rounded-full"
-                      style={{
-                        width: "2px",
-                        height: `${Math.sin(i * 0.4) * 8 + 14}px`,
-                      }}
-                    />
-                  ))}
+
+                <div className="space-y-1">
+                  <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-mono">Present this QR code for gate admission</span>
+                  <span className="text-[9px] text-purple-300/60 block font-light max-w-xs mx-auto leading-relaxed">
+                    Code contains full URL verify matrix mapping securely linked to: <span className="font-mono text-cyan-300">{createdTicket?.id}</span>.
+                  </span>
                 </div>
               </div>
             </div>

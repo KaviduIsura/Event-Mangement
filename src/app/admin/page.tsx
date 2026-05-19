@@ -249,15 +249,19 @@ export default function AdminDashboard() {
           qrbox: 240, // Highly robust static boundary box dimensions prevent startup crashes on mobile iOS/Android
         },
         (decodedText: string) => {
-          setVerifyId(decodedText);
+          // Parse the ticket ID from scanned raw code OR full URL
+          const match = decodedText.match(/RN-\d{4}/i);
+          const scannedId = match ? match[0].toUpperCase() : decodedText.trim().toUpperCase();
+          
+          setVerifyId(scannedId);
           
           toast({
             title: "QR Code Decoded!",
-            description: `Serial parsed: "${decodedText}"`,
+            description: `Serial parsed: "${scannedId}"`,
           });
 
           // Programmatic check-in trigger
-          const matched = rsvps.find(r => r.id.toLowerCase() === decodedText.trim().toLowerCase());
+          const matched = rsvps.find(r => r.id.toLowerCase() === scannedId.toLowerCase());
           if (matched) {
             setVerifiedTicket(matched);
             if (!matched.checkedIn) {
