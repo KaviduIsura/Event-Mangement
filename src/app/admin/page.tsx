@@ -278,17 +278,20 @@ export default function AdminDashboard() {
           });
 
           // Programmatic check-in trigger
-          const matched = rsvps.find(r => r.id.toLowerCase() === scannedId.toLowerCase());
+          const latestRsvps = getRSVPs();
+          const matched = latestRsvps.find(r => r.id.toLowerCase() === scannedId.toLowerCase());
           if (matched) {
-            setVerifiedTicket(matched);
             if (!matched.checkedIn) {
               const updated = updateRSVPCheckIn(matched.id, true);
               setRsvps(updated);
+              const updatedTicket = updated.find(r => r.id === matched.id);
+              setVerifiedTicket(updatedTicket || matched);
               toast({
                 title: "Scan Authorized!",
                 description: `Successfully checked in ${matched.name} (${matched.id}).`,
               });
             } else {
+              setVerifiedTicket(matched);
               toast({
                 title: "Pass Previously Used",
                 description: `${matched.name} is already inside the event hall.`,
@@ -482,18 +485,21 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!verifyId) return;
 
-    const matched = rsvps.find(r => r.id.toLowerCase() === verifyId.trim().toLowerCase());
+    const latestRsvps = getRSVPs();
+    const matched = latestRsvps.find(r => r.id.toLowerCase() === verifyId.trim().toLowerCase());
     if (matched) {
-      setVerifiedTicket(matched);
       if (!matched.checkedIn) {
         // Auto check-in verified ticket
         const updated = updateRSVPCheckIn(matched.id, true);
         setRsvps(updated);
+        const updatedTicket = updated.find(r => r.id === matched.id);
+        setVerifiedTicket(updatedTicket || matched);
         toast({
           title: "Ticket Verified!",
           description: `Checked in ${matched.name} successfully.`,
         });
       } else {
+        setVerifiedTicket(matched);
         toast({
           title: "Ticket Verified",
           description: `${matched.name} was already checked in.`,
@@ -511,7 +517,8 @@ export default function AdminDashboard() {
 
   // Live holographic QR scan simulation
   const triggerSimulatedScan = () => {
-    if (rsvps.length === 0) {
+    const latestRsvps = getRSVPs();
+    if (latestRsvps.length === 0) {
       toast({
         title: "No Tickets Found",
         description: "Please RSVP for a ticket first so we can simulate scanning it!",
@@ -527,27 +534,30 @@ export default function AdminDashboard() {
     });
 
     setTimeout(() => {
+      const currentRsvps = getRSVPs();
       // Pick a random ticket, preferring one that is not checked-in yet
-      const unchecked = rsvps.filter(r => !r.checkedIn);
+      const unchecked = currentRsvps.filter(r => !r.checkedIn);
       const chosenTicket = unchecked.length > 0 
         ? unchecked[Math.floor(Math.random() * unchecked.length)]
-        : rsvps[Math.floor(Math.random() * rsvps.length)];
+        : currentRsvps[Math.floor(Math.random() * currentRsvps.length)];
 
       setVerifyId(chosenTicket.id);
       setIsScanning(false);
 
       // Perform optimistic check-in
       const matched = chosenTicket;
-      setVerifiedTicket(matched);
       
       if (!matched.checkedIn) {
         const updated = updateRSVPCheckIn(matched.id, true);
         setRsvps(updated);
+        const updatedTicket = updated.find(r => r.id === matched.id);
+        setVerifiedTicket(updatedTicket || matched);
         toast({
           title: "Laser Scan Successful!",
           description: `Checked in ${matched.name} (${matched.id}) successfully.`,
         });
       } else {
+        setVerifiedTicket(matched);
         toast({
           title: "Pass Scan Complete",
           description: `${matched.name} was already checked in.`,
