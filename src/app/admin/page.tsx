@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import html2canvas from "html2canvas";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -68,6 +69,8 @@ import {
   CheckCircle,
   XCircle,
   QrCode,
+  Download,
+  Ticket,
   Plus,
   Trash2,
   Volume2,
@@ -146,6 +149,9 @@ export default function AdminDashboard() {
     seats: 1,
     innovationSupport: "",
   });
+
+  // Ticket Preview / Show Modal states
+  const [selectedTicketForPreview, setSelectedTicketForPreview] = useState<RSVP | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -352,9 +358,9 @@ export default function AdminDashboard() {
   const totalCheckedIn = rsvps.filter(r => r.checkedIn).reduce((acc, curr) => acc + curr.seats, 0);
   const totalSponsorsContribution = sponsors.reduce((acc, curr) => acc + curr.contribution, 0);
   
-  // Calculate ticket revenue in LKR: VIP (Rs. 15,000), Sponsor (Rs. 75,000), General (Rs. 3,500)
+  // Calculate ticket revenue in LKR: Neon Entry (Rs. 1,000), Aurora Access (Rs. 1,800), Cosmic Elite (Rs. 2,500)
   const ticketRevenue = rsvps.reduce((acc, curr) => {
-    const price = curr.ticketType === "vip" ? 15000 : curr.ticketType === "sponsor" ? 75000 : 3500;
+    const price = curr.ticketType === "vip" ? 1800 : curr.ticketType === "sponsor" ? 2500 : 1000;
     return acc + (price * curr.seats);
   }, 0);
   const totalFunds = ticketRevenue + totalSponsorsContribution;
@@ -420,6 +426,52 @@ export default function AdminDashboard() {
       toast({
         title: "Counter Issue Failed",
         description: err.message || "Failed to manually issue ticket.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadAdminTicketImage = async () => {
+    const ticketElement = document.querySelector(".print-admin-ticket-card") as HTMLElement;
+    if (!ticketElement) {
+      toast({
+        title: "Download Error",
+        description: "Could not locate ticket element. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Generating Pass",
+        description: "Compiling high-contrast thermal ticket copy...",
+      });
+
+      const canvas = await html2canvas(ticketElement, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const imageUrl = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.href = imageUrl;
+      downloadLink.download = `Rhythm_Night_Ticket_${selectedTicketForPreview?.id || "pass"}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      toast({
+        title: "Download Complete!",
+        description: "Ticket copy has been successfully downloaded.",
+      });
+    } catch (error) {
+      console.error("html2canvas error: ", error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to render ticket image graphics.",
         variant: "destructive",
       });
     }
@@ -843,9 +895,9 @@ export default function AdminDashboard() {
                             <SelectValue placeholder="Select class" />
                           </SelectTrigger>
                           <SelectContent className="bg-[#070417] border-purple-500/30 text-white">
-                            <SelectItem value="general">🎟️ General (Rs. 3,500)</SelectItem>
-                            <SelectItem value="vip">👑 VIP (Rs. 15,000)</SelectItem>
-                            <SelectItem value="sponsor">💎 Sponsor (Rs. 75,000)</SelectItem>
+                            <SelectItem value="general">🎟️ Neon Entry (Rs. 1,000)</SelectItem>
+                            <SelectItem value="vip">👑 Aurora Access (Rs. 1,800)</SelectItem>
+                            <SelectItem value="sponsor">💎 Cosmic Elite (Rs. 2,500)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -873,7 +925,7 @@ export default function AdminDashboard() {
                     <div className="space-y-1.5 bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 flex justify-between items-center">
                       <span className="text-[10px] text-purple-300 font-semibold uppercase tracking-wider">Total Sales price:</span>
                       <span className="text-sm font-mono font-bold text-pink-400">
-                        Rs. {(counterData.seats * (counterData.ticketType === "sponsor" ? 75000 : counterData.ticketType === "vip" ? 15000 : 3500)).toLocaleString()} LKR
+                        Rs. {(counterData.seats * (counterData.ticketType === "sponsor" ? 2500 : counterData.ticketType === "vip" ? 1800 : 1000)).toLocaleString()} LKR
                       </span>
                     </div>
 
@@ -1132,7 +1184,7 @@ export default function AdminDashboard() {
                       <TableHead className="font-semibold text-xs uppercase text-slate-400 w-32">Tier</TableHead>
                       <TableHead className="font-semibold text-xs uppercase text-slate-400 text-center w-24">Seats</TableHead>
                       <TableHead className="font-semibold text-xs uppercase text-slate-400 text-center w-36">Entrance Checked</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase text-slate-400 text-right w-28">Security</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase text-slate-400 text-right w-36">Show Ticket</TableHead>
                     </TableRow>
                   </TableHeader>
                   
@@ -1183,9 +1235,12 @@ export default function AdminDashboard() {
                           </TableCell>
 
                           <TableCell className="text-right pr-4">
-                            <span className="inline-flex items-center gap-1.5 text-[9px] text-slate-400 bg-slate-500/10 border border-slate-500/20 px-2.5 py-1 rounded-full font-mono font-bold tracking-wider">
-                              <Lock className="w-3 h-3 text-slate-400 animate-pulse" /> IMMUTABLE
-                            </span>
+                            <Button
+                              onClick={() => setSelectedTicketForPreview(row)}
+                              className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wider bg-purple-600/20 border border-purple-500/30 hover:bg-purple-600/40 text-purple-300 px-3.5 py-1.5 rounded-xl h-8.5 transition-all duration-300"
+                            >
+                              <QrCode className="w-3.5 h-3.5" /> Show Ticket
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))
@@ -1256,9 +1311,12 @@ export default function AdminDashboard() {
                             )}
                           </button>
 
-                          <span className="inline-flex items-center gap-1 text-[8px] text-slate-400 bg-slate-500/10 border border-slate-500/20 px-2 py-0.5 rounded-full font-mono font-bold tracking-wider">
-                            <Lock className="w-2.5 h-2.5 text-slate-400" /> IMMUTABLE
-                          </span>
+                          <Button
+                            onClick={() => setSelectedTicketForPreview(row)}
+                            className="inline-flex items-center gap-1 text-[9px] font-bold tracking-wider bg-purple-600/20 border border-purple-500/30 hover:bg-purple-600/40 text-purple-300 px-2.5 py-0.5 rounded-xl h-7 transition-all duration-300"
+                          >
+                            <QrCode className="w-2.5 h-2.5" /> Show Ticket
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -1468,7 +1526,7 @@ export default function AdminDashboard() {
                           </div>
                           <div className="text-right">
                             <span className="text-xl font-display font-black text-amber-400 block">
-                              Rs. {(verifiedTicket.seats * (verifiedTicket.ticketType === "sponsor" ? 75000 : verifiedTicket.ticketType === "vip" ? 15000 : 3500)).toLocaleString()} LKR
+                              Rs. {(verifiedTicket.seats * (verifiedTicket.ticketType === "sponsor" ? 2500 : verifiedTicket.ticketType === "vip" ? 1800 : 1000)).toLocaleString()} LKR
                             </span>
                             <span className="text-[8px] uppercase tracking-widest text-white/40 font-mono">Collect at door</span>
                           </div>
@@ -1816,6 +1874,159 @@ export default function AdminDashboard() {
           </Tabs>
         </main>
       </div>
+      {/* GORGEOUS TICKET PREVIEW MODAL FOR ADMIN */}
+      <Dialog open={selectedTicketForPreview !== null} onOpenChange={(open) => { if (!open) setSelectedTicketForPreview(null); }}>
+        <DialogContent className="max-w-md bg-[#070417]/95 border border-purple-500/30 text-white rounded-2xl backdrop-blur-2xl p-6 flex flex-col items-center justify-center overflow-y-auto max-h-[90vh] z-50">
+          <DialogHeader className="w-full text-center mb-2">
+            <DialogTitle className="text-lg font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+              🎫 Entrance Pass Preview
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-400 font-light">
+              Scrollable high-contrast thermal admission voucher. Admin can download or copy.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedTicketForPreview && (
+            <div className="flex flex-col items-center gap-6 w-full">
+              {/* White Thermal Receipt Ticket with Jagged Edges */}
+              <div className="w-[340px] max-w-full bg-white text-slate-900 border border-slate-200 shadow-2xl relative flex flex-col pt-6 pb-6 px-5 print-admin-ticket-card overflow-visible">
+                
+                {/* Top Jagged Edge */}
+                <div className="absolute -top-[6px] left-0 w-full overflow-hidden h-[6px] flex z-10">
+                  {Array.from({ length: 34 }).map((_, i) => (
+                    <svg key={i} className="w-2.5 h-[6px] fill-white text-white shrink-0" viewBox="0 0 10 6">
+                      <polygon points="0,6 5,0 10,6" />
+                    </svg>
+                  ))}
+                </div>
+
+                {/* Bottom Jagged Edge */}
+                <div className="absolute -bottom-[6px] left-0 w-full overflow-hidden h-[6px] flex z-10">
+                  {Array.from({ length: 34 }).map((_, i) => (
+                    <svg key={i} className="w-2.5 h-[6px] fill-white text-white shrink-0" viewBox="0 0 10 6">
+                      <polygon points="0,0 5,6 10,0" />
+                    </svg>
+                  ))}
+                </div>
+
+                {/* Top Section */}
+                <div className="flex flex-col items-center text-center">
+                  <span className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-mono font-bold">RHYTHM NIGHT 2026</span>
+                  <h3 className="text-lg font-black text-slate-900 mt-1">Ticket Confirmed!</h3>
+                  <p className="text-slate-500 text-[10px] max-w-[200px] mt-0.5 leading-relaxed">
+                    Present this QR code at the registration gate to enter.
+                  </p>
+
+                  {/* QR Code Container */}
+                  <div className="w-40 h-40 bg-white p-3 rounded-2xl border border-slate-200 flex items-center justify-center shadow-sm mt-4 shrink-0">
+                    <img
+                      src={selectedTicketForPreview.qrCodeUrl}
+                      alt="Admission QR code"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+
+                  {/* Monospace Serial Code */}
+                  <span className="font-mono font-black text-slate-800 text-sm tracking-widest mt-2.5">
+                    {selectedTicketForPreview.id}
+                  </span>
+                </div>
+
+                {/* Dashed Tear Line */}
+                <div className="relative my-5">
+                  <div className="border-t border-dashed border-slate-300 w-full" />
+                  <div className="absolute -top-[6px] -left-[26px] w-3 h-3 rounded-full bg-[#070417] border-r border-slate-300 z-10" />
+                  <div className="absolute -top-[6px] -right-[26px] w-3 h-3 rounded-full bg-[#070417] border-l border-slate-300 z-10" />
+                </div>
+
+                {/* Bottom Section */}
+                <div className="flex-grow flex flex-col justify-between">
+                  
+                  {/* Header Row: Class Icon */}
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-purple-100 flex items-center justify-center shrink-0 border border-purple-200">
+                        <Ticket className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-[11px] font-bold text-slate-900 block capitalize">
+                          {selectedTicketForPreview.ticketType === "sponsor" ? "💎 Cosmic Elite" : selectedTicketForPreview.ticketType === "vip" ? "👑 Aurora Access" : "🎟️ Neon Entry"}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-mono block">RHYTHM CYBERDOME A</span>
+                      </div>
+                    </div>
+
+                    {/* Small Mini-QR */}
+                    <div className="flex items-center gap-1.5 self-stretch">
+                      <div className="text-[9px] font-mono font-bold text-slate-300 tracking-wider rotate-180 uppercase" style={{ writingMode: "vertical-lr" }}>
+                        {selectedTicketForPreview.id}
+                      </div>
+                      <div className="w-8 h-8 bg-white p-0.5 rounded border border-slate-200 flex items-center justify-center shrink-0">
+                        <img
+                          src={selectedTicketForPreview.qrCodeUrl}
+                          alt="Mini QR"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fields */}
+                  <div className="space-y-2 mt-4 text-xs">
+                    <div className="text-left border-b border-slate-100 pb-1">
+                      <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">Guest Name</span>
+                      <span className="font-bold text-slate-800">{selectedTicketForPreview.name}</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-left border-b border-slate-100 pb-1">
+                        <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">Seats Volume</span>
+                        <span className="font-semibold text-slate-700">{selectedTicketForPreview.seats} {selectedTicketForPreview.seats === 1 ? "Seat" : "Seats"}</span>
+                      </div>
+                      <div className="text-left border-b border-slate-100 pb-1">
+                        <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">Session</span>
+                        <span className="font-semibold text-slate-700">19:30 UTC - 01/16/2026</span>
+                      </div>
+                    </div>
+
+                    <div className="text-left border-b border-slate-100 pb-1 col-span-2">
+                      <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">Entrance Gate Fee</span>
+                      <span className="font-bold text-emerald-600 font-mono">
+                        Rs. {((selectedTicketForPreview.seats || 1) * (selectedTicketForPreview.ticketType === "sponsor" ? 2500 : selectedTicketForPreview.ticketType === "vip" ? 1800 : 1000)).toLocaleString()} LKR
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-2 border-t border-slate-100 text-left">
+                    <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">GATE ENTRY STATUS</span>
+                    <span className="text-[10px] font-bold text-emerald-600 font-mono flex items-center gap-1 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                      PAID & RSVP VALIDATED
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 w-full mt-2">
+                <Button
+                  onClick={downloadAdminTicketImage}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold h-11 rounded-xl text-xs gap-1.5 transition-all duration-300"
+                >
+                  <Download className="w-4 h-4" /> Download Pass Copy
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedTicketForPreview(null)}
+                  className="px-5 border-purple-500/20 hover:bg-purple-950/20 text-purple-300 rounded-xl text-xs font-semibold h-11"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

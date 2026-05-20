@@ -217,26 +217,26 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
             </DialogHeader>
 
             {/* Ticket Tier Selection */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
+             <div className="grid grid-cols-3 gap-3 mb-6">
               {[
                 {
                   type: "general" as const,
-                  label: "General",
-                  desc: "Pass Entry",
+                  label: "Neon Entry",
+                  desc: "Basic Entry",
                   border: "border-purple-500/20",
                   glow: "hover:border-purple-500/55",
                 },
                 {
                   type: "vip" as const,
-                  label: "VIP",
-                  desc: "Lounge Seat",
+                  label: "Aurora Access",
+                  desc: "Standard Pass",
                   border: "border-pink-500/20",
                   glow: "hover:border-pink-500/55",
                 },
                 {
                   type: "sponsor" as const,
-                  label: "Sponsor",
-                  desc: "Exp Booth",
+                  label: "Cosmic Elite",
+                  desc: "VIP lounge access",
                   border: "border-cyan-500/20",
                   glow: "hover:border-cyan-500/55",
                 },
@@ -252,11 +252,11 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                   }`}
                 >
                   <div>
-                    <span className="font-semibold text-sm block text-left">{t.label}</span>
-                    <span className="text-[10px] text-white/50 block text-left">{t.desc}</span>
+                    <span className="font-semibold text-xs block text-left truncate w-full">{t.label}</span>
+                    <span className="text-[9px] text-white/50 block text-left mt-0.5">{t.desc}</span>
                   </div>
                   <span className="text-xs text-purple-300 font-medium font-display mt-2">
-                    {t.type === "general" ? "Rs. 3,500" : t.type === "vip" ? "Rs. 15,000" : "Rs. 75,000"}
+                    {t.type === "general" ? "Rs. 1,000" : t.type === "vip" ? "Rs. 1,800" : "Rs. 2,500"}
                   </span>
                   {ticketType === t.type && (
                     <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-purple-400" />
@@ -317,7 +317,7 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                     <CreditCard className="w-3.5 h-3.5" /> Entrance Gate Fee
                   </Label>
                   <div className="bg-pink-500/10 border border-pink-500/30 rounded-lg h-10 px-3 flex items-center text-xs text-pink-400 font-bold">
-                    Pay at Door: Rs. {(formData.seats * (ticketType === "sponsor" ? 75000 : ticketType === "vip" ? 15000 : 3500)).toLocaleString()} LKR
+                    Pay at Door: Rs. {(formData.seats * (ticketType === "sponsor" ? 2500 : ticketType === "vip" ? 1800 : 1000)).toLocaleString()} LKR
                   </div>
                 </div>
               </div>
@@ -423,7 +423,7 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                     </div>
                     <div className="text-left">
                       <span className="text-[11px] font-bold text-slate-900 block capitalize">
-                        {createdTicket?.ticketType === "sponsor" ? "💎 Sponsor Admission" : createdTicket?.ticketType === "vip" ? "👑 VIP Lounge Access" : "🎟️ General Pass"}
+                        {createdTicket?.ticketType === "sponsor" ? "💎 Cosmic Elite" : createdTicket?.ticketType === "vip" ? "👑 Aurora Access" : "🎟️ Neon Entry"}
                       </span>
                       <span className="text-[9px] text-slate-400 font-mono block">RHYTHM CYBERDOME A</span>
                     </div>
@@ -467,7 +467,7 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                   <div className="text-left border-b border-slate-100 pb-1 col-span-2">
                     <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">Entrance Gate Fee</span>
                     <span className="font-bold text-emerald-600 font-mono">
-                      Rs. {((createdTicket?.seats || 1) * (createdTicket?.ticketType === "sponsor" ? 75000 : createdTicket?.ticketType === "vip" ? 15000 : 3500)).toLocaleString()} LKR
+                      Rs. {((createdTicket?.seats || 1) * (createdTicket?.ticketType === "sponsor" ? 2500 : createdTicket?.ticketType === "vip" ? 1800 : 1000)).toLocaleString()} LKR
                     </span>
                   </div>
                 </div>

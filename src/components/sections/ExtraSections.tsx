@@ -360,9 +360,9 @@ export function Pricing() {
   const tiers = [
     {
       type: "general",
-      title: "General Entry",
-      price: "Donation Match",
-      desc: "Full admission to the live concert, DJ slots, and common IT Fair exhibition stalls.",
+      title: "Neon Entry",
+      price: "Rs. 1,000",
+      desc: "Basic entrance ticket to the live concert, DJ slots, and IT Fair exhibition stalls.",
       features: [
         "Concert Hall entry",
         "Acoustic + Synth Band sets",
@@ -375,9 +375,9 @@ export function Pricing() {
     },
     {
       type: "vip",
-      title: "VIP Lounge Pass",
-      price: "$50",
-      desc: "Elevated concert visibility, access to the VIP Lounge, and free drinks/buffet.",
+      title: "Aurora Access",
+      price: "Rs. 1,800",
+      desc: "Standard entrance pass featuring elevated concert visibility and access to standard lounge.",
       features: [
         "Front row concert visibility",
         "Exclusive VIP lounge access",
@@ -392,11 +392,11 @@ export function Pricing() {
     },
     {
       type: "sponsor",
-      title: "Corporate Sponsor",
-      price: "$250",
-      desc: "All VIP benefits plus sponsor placement (logo in scroller), and private VC pitch meetings.",
+      title: "Cosmic Elite",
+      price: "Rs. 2,500",
+      desc: "Ultimate premium VIP ticket including access to cosmic lounge and exclusive innovator booths.",
       features: [
-        "4 VIP Boarding Passes",
+        "4 VIP Cosmic Boarding Passes",
         "Sponsor logo placement active",
         "Student pitch private meetings",
         "Exclusive dinner with jury team",
