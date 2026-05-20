@@ -43,73 +43,79 @@ export default function Home() {
       {/* Floating navigation header */}
       <Navbar />
 
-      {/* GORGEOUS CYBER BROADCAST BANNER */}
+      {/* COMPACT FLOATING CYBER BROADCAST ALERT BOX */}
       <AnimatePresence>
         {visible && announcements.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="fixed top-[85px] left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-3xl"
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="fixed top-24 right-4 sm:right-6 md:right-8 z-50 w-[320px] max-w-[90vw]"
           >
-            <div className={`p-3.5 rounded-2xl border backdrop-blur-xl flex items-center justify-between gap-4 shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all duration-300 ${
+            <div className={`p-4 rounded-2xl border backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 relative flex flex-col gap-2.5 ${
               announcements[activeAnnIndex].type === "alert"
-                ? "bg-pink-950/40 border-pink-500/30 text-pink-200"
+                ? "bg-[#0c041c]/95 border-pink-500/30 text-pink-200 shadow-[0_0_20px_rgba(244,63,94,0.1)]"
                 : announcements[activeAnnIndex].type === "success"
-                ? "bg-cyan-950/40 border-cyan-500/30 text-cyan-200"
-                : "bg-purple-950/40 border-purple-500/30 text-purple-200"
+                ? "bg-[#040c1c]/95 border-cyan-500/30 text-cyan-200 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+                : "bg-[#08041c]/95 border-purple-500/30 text-purple-200 shadow-[0_0_20px_rgba(168,85,247,0.1)]"
             }`}>
-              <div className="flex items-center gap-3 min-w-0">
-                {/* Ticker Icon */}
-                <div className={`p-2 rounded-xl shrink-0 ${
-                  announcements[activeAnnIndex].type === "alert"
-                    ? "bg-pink-500/20 text-pink-400"
-                    : announcements[activeAnnIndex].type === "success"
-                    ? "bg-cyan-500/20 text-cyan-400"
-                    : "bg-purple-500/20 text-purple-400"
-                }`}>
-                  {announcements[activeAnnIndex].type === "alert" ? (
-                    <AlertTriangle className="w-4 h-4 animate-bounce" />
-                  ) : announcements[activeAnnIndex].type === "success" ? (
-                    <CheckCircle2 className="w-4 h-4" />
-                  ) : (
-                    <Info className="w-4 h-4 animate-pulse" />
-                  )}
-                </div>
-
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-bold tracking-widest uppercase font-mono bg-white/5 px-2 py-0.5 rounded border border-white/10 shrink-0">
-                      Broadcast Alert
-                    </span>
-                    <h4 className="font-bold text-xs sm:text-sm truncate">
-                      {announcements[activeAnnIndex].title}
-                    </h4>
+              
+              {/* Header with Icon, Ticker, and close action button */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className={`p-1.5 rounded-lg shrink-0 ${
+                    announcements[activeAnnIndex].type === "alert"
+                      ? "bg-pink-500/20 text-pink-400"
+                      : announcements[activeAnnIndex].type === "success"
+                      ? "bg-cyan-500/20 text-cyan-400"
+                      : "bg-purple-500/20 text-purple-400"
+                  }`}>
+                    {announcements[activeAnnIndex].type === "alert" ? (
+                      <AlertTriangle className="w-3.5 h-3.5 animate-bounce" />
+                    ) : announcements[activeAnnIndex].type === "success" ? (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    ) : (
+                      <Info className="w-3.5 h-3.5 animate-pulse" />
+                    )}
                   </div>
-                  <p className="text-[11px] opacity-80 font-light truncate mt-0.5 max-w-[500px]">
-                    {announcements[activeAnnIndex].content}
-                  </p>
+                  <span className="text-[9px] font-bold tracking-widest uppercase font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded text-white/80">
+                    {announcements[activeAnnIndex].type === "alert" ? "SYSTEM ALERT" : "BROADCAST"}
+                  </span>
                 </div>
-              </div>
-
-              {/* Navigation and Dismiss */}
-              <div className="flex items-center gap-2 shrink-0">
-                {announcements.length > 1 && (
-                  <button
-                    onClick={() => setActiveAnnIndex((prev) => (prev + 1) % announcements.length)}
-                    className="text-[9px] font-bold font-mono tracking-wider bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg hover:bg-white/10 transition-colors text-white"
-                  >
-                    Next ({activeAnnIndex + 1}/{announcements.length})
-                  </button>
-                )}
+                
                 <button
                   onClick={() => setVisible(false)}
-                  className="p-1.5 hover:bg-white/5 rounded-lg border border-transparent hover:border-white/10 text-white/60 hover:text-white transition-all"
+                  className="p-1 hover:bg-white/5 rounded-lg border border-transparent hover:border-white/10 text-white/50 hover:text-white transition-all shrink-0"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
+
+              {/* Text content details */}
+              <div className="space-y-1">
+                <h4 className="font-bold text-xs sm:text-sm text-white tracking-wide leading-tight">
+                  {announcements[activeAnnIndex].title}
+                </h4>
+                <p className="text-[11px] opacity-75 font-light text-slate-300 leading-relaxed break-words">
+                  {announcements[activeAnnIndex].content}
+                </p>
+              </div>
+
+              {/* Navigation controls footer */}
+              {announcements.length > 1 && (
+                <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-2 mt-0.5">
+                  <span className="text-[9px] text-slate-500 font-mono">
+                    Message {activeAnnIndex + 1} of {announcements.length}
+                  </span>
+                  <button
+                    onClick={() => setActiveAnnIndex((prev) => (prev + 1) % announcements.length)}
+                    className="text-[9px] font-bold font-mono tracking-wider bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-lg hover:bg-purple-500/20 text-purple-300 transition-all duration-300"
+                  >
+                    Next Broadcast &rarr;
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
