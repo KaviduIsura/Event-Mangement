@@ -134,15 +134,9 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
     onOpenChange(false);
   };
 
-  const ticketPrices = {
-    general: "Donation Match",
-    vip: "$50 USD",
-    sponsor: "$250 USD",
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetModal(); else onOpenChange(open); }}>
-      <DialogContent className="max-w-xl w-[95vw] max-h-[90vh] overflow-y-auto bg-[#070417]/95 border border-purple-500/30 backdrop-blur-2xl text-white rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.15)] scrollbar-thin scrollbar-thumb-purple-500/20 p-6 md:p-8">
+      <DialogContent className="max-w-xl w-[95vw] max-h-[95vh] overflow-y-auto bg-[#070417]/95 border border-purple-500/30 backdrop-blur-2xl text-white rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.15)] p-5 sm:p-6 scrollbar-thin scrollbar-thumb-purple-500/20">
         {step === "form" ? (
           <div className="p-1">
             <DialogHeader className="mb-6">
@@ -158,23 +152,41 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
             {/* Ticket Tier Selection */}
             <div className="grid grid-cols-3 gap-3 mb-6">
               {[
-                { type: "general", label: "General", desc: "Show Entry", border: "border-purple-500/20", glow: "hover:border-purple-500/50" },
-                { type: "vip", label: "VIP Pass", desc: "Front Lounge", border: "border-pink-500/20", glow: "hover:border-pink-500/50" },
-                { type: "sponsor", label: "Sponsor", desc: "VIP + Dinner", border: "border-cyan-500/20", glow: "hover:border-cyan-500/50" },
+                {
+                  type: "general" as const,
+                  label: "General",
+                  desc: "Pass Entry",
+                  border: "border-purple-500/20",
+                  glow: "hover:border-purple-500/55",
+                },
+                {
+                  type: "vip" as const,
+                  label: "VIP",
+                  desc: "Lounge Seat",
+                  border: "border-pink-500/20",
+                  glow: "hover:border-pink-500/55",
+                },
+                {
+                  type: "sponsor" as const,
+                  label: "Sponsor",
+                  desc: "Exp Booth",
+                  border: "border-cyan-500/20",
+                  glow: "hover:border-cyan-500/55",
+                },
               ].map((t) => (
                 <button
                   key={t.type}
                   type="button"
-                  onClick={() => handleTicketSelect(t.type as any)}
-                  className={`p-3 rounded-xl border text-left transition-all duration-300 relative overflow-hidden flex flex-col justify-between h-24 ${
+                  onClick={() => handleTicketSelect(t.type)}
+                  className={`relative p-3 rounded-xl border flex flex-col justify-between items-start transition-all duration-300 ${
                     ticketType === t.type
                       ? "bg-purple-600/20 border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
                       : `bg-[#0e0a29]/60 ${t.border} ${t.glow}`
                   }`}
                 >
                   <div>
-                    <span className="font-semibold text-sm block">{t.label}</span>
-                    <span className="text-[10px] text-white/50 block">{t.desc}</span>
+                    <span className="font-semibold text-sm block text-left">{t.label}</span>
+                    <span className="text-[10px] text-white/50 block text-left">{t.desc}</span>
                   </div>
                   <span className="text-xs text-purple-300 font-medium font-display mt-2">
                     {t.type === "general" ? "Donation" : t.type === "vip" ? "$50" : "$250"}
@@ -199,6 +211,7 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                     required
                   />
                 </div>
+
                 <div className="space-y-1.5">
                   <Label htmlFor="email" className="text-xs text-purple-200/70">Email Address</Label>
                   <Input
@@ -206,7 +219,7 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    placeholder="name@example.com"
+                    placeholder="name@domain.com"
                     className="bg-[#0e0a2b]/80 border-purple-500/20 focus:border-purple-500/60 focus:ring-0 text-white rounded-lg h-10"
                     required
                   />
@@ -216,15 +229,15 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="seats" className="text-xs text-purple-200/70 flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5" /> Number of Seats
+                    <Users className="w-3.5 h-3.5" /> Seats Volume
                   </Label>
                   <Select onValueChange={handleSeatsChange} defaultValue="1">
-                    <SelectTrigger className="bg-[#0e0a2b]/80 border-purple-500/20 focus:border-purple-500/60 text-white rounded-lg h-10">
-                      <SelectValue placeholder="Select seats" />
+                    <SelectTrigger className="bg-[#0e0a2b]/80 border-purple-500/20 focus:ring-0 text-white h-10 rounded-lg">
+                      <SelectValue placeholder="1 Seat" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#0e0a2b] border-purple-500/30 text-white">
-                      {[1, 2, 3, 4, 5].map((num) => (
-                        <SelectItem key={num} value={num.toString()} className="focus:bg-purple-600/30">
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                        <SelectItem key={num} value={num.toString()}>
                           {num} {num === 1 ? "Seat" : "Seats"}
                         </SelectItem>
                       ))}
@@ -273,143 +286,91 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
           </div>
         ) : (
           /* CINEMATIC TICKETING BOARDING PASS */
-          <div className="p-1 flex flex-col items-center">
-            <CheckCircle className="w-12 h-12 text-emerald-400 mb-3 animate-bounce" />
-            <h2 className="text-2xl font-bold font-display text-center mb-1">Reservation Confirmed</h2>
-            <p className="text-white/60 text-xs text-center mb-6">
-              Your futuristic boarding pass is compiled. Present this code at the registration gate.
+          <div className="flex flex-col items-center">
+            <CheckCircle className="w-10 h-10 text-emerald-400 mb-2 animate-bounce" />
+            <h2 className="text-xl font-bold font-display text-center mb-0.5">Reservation Confirmed</h2>
+            <p className="text-white/60 text-[11px] text-center mb-4">
+              Your boarding pass is ready. Present this QR code at the event gate.
             </p>
 
-            {/* Glowing Ticket Shell */}
-            <div className="w-full bg-gradient-to-b from-[#110c33] to-[#070417] border border-purple-400/40 rounded-2xl overflow-hidden relative shadow-[0_0_30px_rgba(168,85,247,0.25)] flex flex-col print-ticket-card">
+            {/* Glowing Ticket Shell - Double Column Boarding Pass */}
+            <div className="w-full bg-gradient-to-br from-[#120b38] via-[#090520] to-[#040210] border border-purple-400/40 rounded-2xl overflow-hidden relative shadow-[0_0_30px_rgba(168,85,247,0.25)] flex flex-col sm:flex-row print-ticket-card">
               
-              {/* Ticket Top: Brand & Invoice Header */}
-              <div className="p-6 border-b border-purple-500/20 bg-purple-950/20 text-center flex flex-col items-center">
-                <span className="text-[9px] uppercase tracking-[0.25em] text-purple-300 font-mono font-bold">OFFICIAL ENTRY ADMISSION RECEIPT</span>
-                <span className="text-xl md:text-2xl font-black font-display text-white tracking-widest mt-1.5 bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-white to-pink-300">
-                  RHYTHM NIGHT 2026
-                </span>
-                <span className="text-[10px] text-slate-400 font-mono mt-1">SECURE ENCRYPTED BOARDING PASS</span>
-              </div>
-
-              {/* Ticket Middle: Invoice Details & Itemized Pricing List */}
-              <div className="p-6 space-y-5">
-                
-                {/* Invoice Meta */}
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">ISSUED TO (GUEST)</span>
-                    <span className="font-bold text-white text-sm block mt-0.5">{createdTicket?.name}</span>
-                    <span className="text-slate-400 text-[10px] block mt-0.5 truncate max-w-[170px]">{createdTicket?.email}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">INVOICE SERIAL ID</span>
-                    <span className="font-mono font-black text-cyan-300 text-sm block mt-0.5">{createdTicket?.id}</span>
-                    <span className="text-[9px] text-slate-400 block mt-0.5">DATE: JAN 16, 2026</span>
-                  </div>
-                </div>
-
-                {/* Itemized pricing table - Bill structure */}
-                <div className="border border-purple-500/15 rounded-xl overflow-hidden bg-purple-950/10">
-                  {/* Table Header */}
-                  <div className="grid grid-cols-12 bg-purple-950/45 p-2 text-[8px] font-mono font-bold uppercase tracking-wider text-slate-300 border-b border-purple-500/20">
-                    <div className="col-span-6">ITEM DESCRIPTION</div>
-                    <div className="col-span-2 text-center">QTY</div>
-                    <div className="col-span-2 text-right">UNIT</div>
-                    <div className="col-span-2 text-right">SUBTOTAL</div>
+              {/* Left Column: Guest & Ticket Details */}
+              <div className="flex-grow p-4 sm:p-5 flex flex-col justify-between border-b sm:border-b-0 sm:border-r border-purple-500/20">
+                <div className="space-y-4">
+                  {/* Brand & Serial */}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[8px] uppercase tracking-[0.2em] text-cyan-300 font-mono font-bold block text-left">EVENT BOARDING PASS</span>
+                      <h3 className="text-lg font-black tracking-wider text-white mt-0.5 text-left">RHYTHM NIGHT 2026</h3>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">SERIAL ID</span>
+                      <span className="font-mono font-bold text-pink-400 text-xs">{createdTicket?.id}</span>
+                    </div>
                   </div>
 
-                  {/* Seat ticket row */}
-                  <div className="grid grid-cols-12 p-3 text-[11px] border-b border-purple-500/10 items-center">
-                    <div className="col-span-6 font-semibold text-white capitalize flex flex-col">
-                      <span>
-                        {createdTicket?.ticketType === "sponsor" 
-                          ? "💎 Corporate Sponsor Pass" 
-                          : createdTicket?.ticketType === "vip" 
-                          ? "👑 VIP Lounge Pass" 
-                          : "🎟️ General Support Pass"}
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs">
+                    <div className="text-left">
+                      <span className="text-[8px] uppercase text-slate-400 font-mono block">GUEST NAME</span>
+                      <span className="font-semibold text-white truncate max-w-[130px] block">{createdTicket?.name}</span>
+                    </div>
+                    <div className="text-left">
+                      <span className="text-[8px] uppercase text-slate-400 font-mono block">ADMISSION TIER</span>
+                      <span className="font-bold text-purple-300 uppercase flex items-center gap-1">
+                        {createdTicket?.ticketType === "sponsor" ? "💎 Sponsor" : createdTicket?.ticketType === "vip" ? "👑 VIP" : "🎟️ General"}
                       </span>
-                      <span className="text-[9px] text-slate-400 font-normal font-mono mt-0.5">Includes full hall admission</span>
                     </div>
-                    <div className="col-span-2 text-center font-bold text-purple-300">{createdTicket?.seats}</div>
-                    <div className="col-span-2 text-right font-mono text-slate-300">
-                      ${createdTicket?.ticketType === "sponsor" ? "250.00" : createdTicket?.ticketType === "vip" ? "50.00" : "10.00"}
+                    <div className="text-left">
+                      <span className="text-[8px] uppercase text-slate-400 font-mono block">SEATS</span>
+                      <span className="font-medium text-white">{createdTicket?.seats} {createdTicket?.seats === 1 ? "Seat" : "Seats"}</span>
                     </div>
-                    <div className="col-span-2 text-right font-mono font-bold text-white">
-                      ${((createdTicket?.seats || 1) * (createdTicket?.ticketType === "sponsor" ? 250 : createdTicket?.ticketType === "vip" ? 50 : 10)).toFixed(2)}
-                    </div>
-                  </div>
-
-                  {/* Booking Tax row */}
-                  <div className="grid grid-cols-12 p-2.5 text-[10px] text-slate-400 border-b border-purple-500/10 bg-purple-950/15">
-                    <div className="col-span-10">Booking Fee & Convenience Charge</div>
-                    <div className="col-span-2 text-right text-emerald-400 font-bold">FREE</div>
-                  </div>
-
-                  {/* Grand total row */}
-                  <div className="grid grid-cols-12 p-3 bg-purple-950/25 text-xs items-center">
-                    <div className="col-span-6 text-[9px] uppercase font-bold tracking-wider text-emerald-400 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      PAID & RSVP VALIDATED
-                    </div>
-                    <div className="col-span-4 text-right font-bold text-slate-400">TOTAL PAID:</div>
-                    <div className="col-span-2 text-right font-mono text-xs font-black text-white">
-                      ${((createdTicket?.seats || 1) * (createdTicket?.ticketType === "sponsor" ? 250 : createdTicket?.ticketType === "vip" ? 50 : 10)).toFixed(2)}
+                    <div className="text-left">
+                      <span className="text-[8px] uppercase text-slate-400 font-mono block">GATE FEE</span>
+                      <span className="font-bold text-emerald-400 font-mono">
+                        ${((createdTicket?.seats || 1) * (createdTicket?.ticketType === "sponsor" ? 250 : createdTicket?.ticketType === "vip" ? 50 : 10)).toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Event date/location block */}
-                <div className="flex justify-between items-center bg-purple-950/10 border border-purple-500/10 p-3 rounded-xl text-xs">
-                  <div>
-                    <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">EVENT VENUE</span>
-                    <span className="text-[11px] font-semibold text-white">Rhythm Cyberdome Hall A</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">DOORS TIMING</span>
-                    <span className="text-[11px] font-semibold text-white">Jan 16, 2026 • 19:30 UTC</span>
+                {/* Venue & Time Block (Bottom of Left Column) */}
+                <div className="mt-4 pt-2.5 border-t border-purple-500/10 space-y-1 text-[9px] text-slate-300">
+                  <div className="flex justify-between flex-wrap gap-1 text-left">
+                    <span>🏛️ RHYTHM CYBERDOME HALL A</span>
+                    <span>🕒 JAN 16, 2026 • 19:30 UTC</span>
                   </div>
                 </div>
-
-                {createdTicket?.innovationSupport && (
-                  <div className="text-[10px] text-purple-200/50 text-center italic font-light truncate max-w-full">
-                    &ldquo;{createdTicket.innovationSupport}&rdquo;
-                  </div>
-                )}
               </div>
 
-              {/* Tear-Off Cut Line */}
-              <div className="relative h-px w-full border-t border-dashed border-purple-500/30">
-                <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#070417] border-r border-purple-500/30" />
-                <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/2 w-4 h-4 rounded-full bg-[#070417] border-l border-purple-500/30" />
+              {/* Tear-Off Cut Line (Only visible on desktop/tablet, hidden on mobile) */}
+              <div className="hidden sm:flex flex-col justify-between py-3 relative w-px bg-transparent">
+                <div className="absolute -top-2 -left-2 w-4 h-4 rounded-full bg-[#070417] border-b border-purple-500/20" />
+                <div className="h-full border-l border-dashed border-purple-500/30" />
+                <div className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full bg-[#070417] border-t border-purple-500/20" />
               </div>
 
-              {/* Large QR Display centered at the bottom */}
-              <div className="p-6 bg-purple-950/15 flex flex-col items-center gap-4 text-center">
-                <span className="text-[9px] uppercase tracking-[0.2em] text-cyan-300 font-mono font-bold block">
-                  SECURE DECRYPTION GATE PASS QR
-                </span>
-
-                {/* Large QR display container */}
-                <div className="w-48 h-48 bg-white p-3 rounded-3xl border border-purple-500/30 flex items-center justify-center relative overflow-hidden shadow-[0_0_25px_rgba(168,85,247,0.12)] shrink-0">
+              {/* Right Column: High-Contrast QR Scanner Gate Gate */}
+              <div className="w-full sm:w-[170px] bg-purple-950/10 p-4 sm:p-5 flex flex-col items-center justify-center gap-3 text-center shrink-0">
+                <span className="text-[8px] uppercase tracking-wider text-cyan-300 font-mono font-bold">SCAN GATE ENTRY</span>
+                
+                {/* QR Code Container */}
+                <div className="w-28 h-28 sm:w-32 sm:h-32 bg-white p-2 rounded-2xl border border-purple-500/20 flex items-center justify-center shadow-lg shrink-0">
                   <img
                     src={createdTicket?.qrCodeUrl}
-                    alt="Secure entry QR code"
+                    alt="Admission QR code"
                     className="w-full h-full object-contain"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-mono">Present this QR code for gate admission</span>
-                  <span className="text-[9px] text-purple-300/60 block font-light max-w-xs mx-auto leading-relaxed">
-                    Code contains full URL verify matrix mapping securely linked to: <span className="font-mono text-cyan-300">{createdTicket?.id}</span>.
-                  </span>
-                </div>
+                <span className="text-[8px] text-slate-400 font-mono block mt-1">PAID & RSVP VALIDATED</span>
               </div>
             </div>
 
             {/* CTAs */}
-            <div className="flex gap-3 w-full mt-6">
+            <div className="flex gap-3 w-full mt-5">
               <Button
                 variant="outline"
                 onClick={resetModal}
@@ -421,7 +382,7 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                 onClick={() => {
                   window.print();
                 }}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl h-10 font-semibold flex items-center justify-center gap-1.5"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl h-10 font-semibold flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(236,72,153,0.3)]"
               >
                 <Download className="w-4 h-4" /> Download Pass
               </Button>
