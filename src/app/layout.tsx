@@ -17,6 +17,9 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Rhythm Night 2026 | IT Innovation Fair Fundraiser",
   description: "An immersive, cinematic fundraiser event for the IT Innovation Fair 2026. Join us for live bands, future technology exhibitions, and community action.",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
