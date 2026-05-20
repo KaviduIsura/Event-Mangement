@@ -11,6 +11,8 @@ import { saveRSVP, getRSVPs, RSVP } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { Ticket, Sparkles, CheckCircle, CreditCard, Download, Users } from "lucide-react";
 import confetti from "canvas-confetti";
+import html2canvas from "html2canvas";
+import { useLenis } from "lenis/react";
 
 interface RsvpModalProps {
   isOpen: boolean;
@@ -30,6 +32,25 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
   });
   const [createdTicket, setCreatedTicket] = useState<RSVP | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const lenis = useLenis();
+
+  useEffect(() => {
+    if (!lenis) return;
+    if (isOpen) {
+      lenis.stop();
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      lenis.start();
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+    return () => {
+      lenis.start();
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [isOpen, lenis]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -134,9 +155,55 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
     onOpenChange(false);
   };
 
+  const downloadTicketImage = async () => {
+    const ticketElement = document.querySelector(".print-ticket-card") as HTMLElement;
+    if (!ticketElement) {
+      toast({
+        title: "Download Error",
+        description: "Could not locate ticket element. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Generating Pass",
+        description: "Compiling your high-contrast thermal ticket...",
+      });
+
+      const canvas = await html2canvas(ticketElement, {
+        scale: 3, // High definition crisp scaling
+        useCORS: true, // Allow external QR vector loading
+        backgroundColor: "#ffffff", // Pure white card background
+        logging: false,
+      });
+
+      const imageUrl = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.href = imageUrl;
+      downloadLink.download = `Rhythm_Night_Ticket_${createdTicket?.id || "pass"}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      toast({
+        title: "Download Complete!",
+        description: "Your fully completed ticket image has been saved.",
+      });
+    } catch (error) {
+      console.error("html2canvas error: ", error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to render ticket image graphics.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetModal(); else onOpenChange(open); }}>
-      <DialogContent className="max-w-xl w-[95vw] max-h-[95vh] overflow-y-auto bg-[#070417]/95 border border-purple-500/30 backdrop-blur-2xl text-white rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.15)] p-5 sm:p-6 scrollbar-thin scrollbar-thumb-purple-500/20">
+      <DialogContent data-lenis-prevent className="max-w-xl w-[95vw] max-h-[95vh] overflow-y-auto bg-[#070417]/95 border border-purple-500/30 backdrop-blur-2xl text-white rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.15)] p-5 sm:p-6 scrollbar-thin scrollbar-thumb-purple-500/20">
         {step === "form" ? (
           <div className="p-1">
             <DialogHeader className="mb-6">
@@ -289,88 +356,127 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
           <div className="flex flex-col items-center">
             <CheckCircle className="w-10 h-10 text-emerald-400 mb-2 animate-bounce" />
             <h2 className="text-xl font-bold font-display text-center mb-0.5">Reservation Confirmed</h2>
-            <p className="text-white/60 text-[11px] text-center mb-4">
-              Your boarding pass is ready. Present this QR code at the event gate.
+            <p className="text-white/60 text-[11px] text-center mb-5">
+              Your ticket is successfully compiled. Present this receipt for scan-gate entrance.
             </p>
 
-            {/* Glowing Ticket Shell - Double Column Boarding Pass */}
-            <div className="w-full bg-gradient-to-br from-[#120b38] via-[#090520] to-[#040210] border border-purple-400/40 rounded-2xl overflow-hidden relative shadow-[0_0_30px_rgba(168,85,247,0.25)] flex flex-col sm:flex-row print-ticket-card">
+            {/* White Thermal Receipt Ticket with Jagged Edges */}
+            <div className="w-[360px] max-w-full bg-white text-slate-900 border border-slate-200 shadow-2xl relative flex flex-col pt-6 pb-6 px-5 print-ticket-card overflow-visible">
               
-              {/* Left Column: Guest & Ticket Details */}
-              <div className="flex-grow p-4 sm:p-5 flex flex-col justify-between border-b sm:border-b-0 sm:border-r border-purple-500/20">
-                <div className="space-y-4">
-                  {/* Brand & Serial */}
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-[8px] uppercase tracking-[0.2em] text-cyan-300 font-mono font-bold block text-left">EVENT BOARDING PASS</span>
-                      <h3 className="text-lg font-black tracking-wider text-white mt-0.5 text-left">RHYTHM NIGHT 2026</h3>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">SERIAL ID</span>
-                      <span className="font-mono font-bold text-pink-400 text-xs">{createdTicket?.id}</span>
-                    </div>
-                  </div>
-
-                  {/* Details Grid */}
-                  <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs">
-                    <div className="text-left">
-                      <span className="text-[8px] uppercase text-slate-400 font-mono block">GUEST NAME</span>
-                      <span className="font-semibold text-white truncate max-w-[130px] block">{createdTicket?.name}</span>
-                    </div>
-                    <div className="text-left">
-                      <span className="text-[8px] uppercase text-slate-400 font-mono block">ADMISSION TIER</span>
-                      <span className="font-bold text-purple-300 uppercase flex items-center gap-1">
-                        {createdTicket?.ticketType === "sponsor" ? "💎 Sponsor" : createdTicket?.ticketType === "vip" ? "👑 VIP" : "🎟️ General"}
-                      </span>
-                    </div>
-                    <div className="text-left">
-                      <span className="text-[8px] uppercase text-slate-400 font-mono block">SEATS</span>
-                      <span className="font-medium text-white">{createdTicket?.seats} {createdTicket?.seats === 1 ? "Seat" : "Seats"}</span>
-                    </div>
-                    <div className="text-left">
-                      <span className="text-[8px] uppercase text-slate-400 font-mono block">GATE FEE</span>
-                      <span className="font-bold text-emerald-400 font-mono">
-                        ${((createdTicket?.seats || 1) * (createdTicket?.ticketType === "sponsor" ? 250 : createdTicket?.ticketType === "vip" ? 50 : 10)).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Venue & Time Block (Bottom of Left Column) */}
-                <div className="mt-4 pt-2.5 border-t border-purple-500/10 space-y-1 text-[9px] text-slate-300">
-                  <div className="flex justify-between flex-wrap gap-1 text-left">
-                    <span>🏛️ RHYTHM CYBERDOME HALL A</span>
-                    <span>🕒 JAN 16, 2026 • 19:30 UTC</span>
-                  </div>
-                </div>
+              {/* Top Jagged Edge (Row of SVG Triangles) */}
+              <div className="absolute -top-[6px] left-0 w-full overflow-hidden h-[6px] flex z-10">
+                {Array.from({ length: 36 }).map((_, i) => (
+                  <svg key={i} className="w-2.5 h-[6px] fill-white text-white shrink-0" viewBox="0 0 10 6">
+                    <polygon points="0,6 5,0 10,6" />
+                  </svg>
+                ))}
               </div>
 
-              {/* Tear-Off Cut Line (Only visible on desktop/tablet, hidden on mobile) */}
-              <div className="hidden sm:flex flex-col justify-between py-3 relative w-px bg-transparent">
-                <div className="absolute -top-2 -left-2 w-4 h-4 rounded-full bg-[#070417] border-b border-purple-500/20" />
-                <div className="h-full border-l border-dashed border-purple-500/30" />
-                <div className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full bg-[#070417] border-t border-purple-500/20" />
+              {/* Bottom Jagged Edge (Row of SVG Triangles) */}
+              <div className="absolute -bottom-[6px] left-0 w-full overflow-hidden h-[6px] flex z-10">
+                {Array.from({ length: 36 }).map((_, i) => (
+                  <svg key={i} className="w-2.5 h-[6px] fill-white text-white shrink-0" viewBox="0 0 10 6">
+                    <polygon points="0,0 5,6 10,0" />
+                  </svg>
+                ))}
               </div>
 
-              {/* Right Column: High-Contrast QR Scanner Gate Gate */}
-              <div className="w-full sm:w-[170px] bg-purple-950/10 p-4 sm:p-5 flex flex-col items-center justify-center gap-3 text-center shrink-0">
-                <span className="text-[8px] uppercase tracking-wider text-cyan-300 font-mono font-bold">SCAN GATE ENTRY</span>
-                
-                {/* QR Code Container */}
-                <div className="w-28 h-28 sm:w-32 sm:h-32 bg-white p-2 rounded-2xl border border-purple-500/20 flex items-center justify-center shadow-lg shrink-0">
+              {/* Top Section */}
+              <div className="flex flex-col items-center text-center">
+                <span className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-mono font-bold">RHYTHM NIGHT 2026</span>
+                <h3 className="text-lg font-black text-slate-900 mt-1">Ticket Confirmed!</h3>
+                <p className="text-slate-500 text-[10px] max-w-[200px] mt-0.5 leading-relaxed">
+                  Present this QR code at the registration gate to enter.
+                </p>
+
+                {/* Massive QR Code Container */}
+                <div className="w-40 h-40 bg-white p-3 rounded-2xl border border-slate-200 flex items-center justify-center shadow-sm mt-4 shrink-0">
                   <img
                     src={createdTicket?.qrCodeUrl}
                     alt="Admission QR code"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain animate-fade-in"
                   />
                 </div>
 
-                <span className="text-[8px] text-slate-400 font-mono block mt-1">PAID & RSVP VALIDATED</span>
+                {/* Monospace Serial Code */}
+                <span className="font-mono font-black text-slate-800 text-sm tracking-widest mt-2.5">
+                  {createdTicket?.id}
+                </span>
+              </div>
+
+              {/* Dashed Horizontal Tear-off Line */}
+              <div className="relative my-5">
+                <div className="border-t border-dashed border-slate-300 w-full" />
+                <div className="absolute -top-[6px] -left-[26px] w-3 h-3 rounded-full bg-[#070417] border-r border-slate-300 z-10" />
+                <div className="absolute -top-[6px] -right-[26px] w-3 h-3 rounded-full bg-[#070417] border-l border-slate-300 z-10" />
+              </div>
+
+              {/* Bottom Section */}
+              <div className="flex-grow flex flex-col justify-between">
+                
+                {/* Header Row: Avatar & Brand Title */}
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-2.5">
+                    {/* Event Avatar placeholder / Performer image */}
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-purple-100 flex items-center justify-center shrink-0 border border-purple-200">
+                      <Ticket className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-[11px] font-bold text-slate-900 block capitalize">
+                        {createdTicket?.ticketType === "sponsor" ? "💎 Sponsor Admission" : createdTicket?.ticketType === "vip" ? "👑 VIP Lounge Access" : "🎟️ General Pass"}
+                      </span>
+                      <span className="text-[9px] text-slate-400 font-mono block">RHYTHM CYBERDOME A</span>
+                    </div>
+                  </div>
+
+                  {/* Rotated Serial & Small QR block on the right */}
+                  <div className="flex items-center gap-1.5 self-stretch">
+                    {/* Vertical text serial */}
+                    <div className="text-[9px] font-mono font-bold text-slate-300 tracking-wider rotate-180 uppercase" style={{ writingMode: "vertical-lr" }}>
+                      {createdTicket?.id}
+                    </div>
+                    {/* Tiny copy of QR code */}
+                    <div className="w-8 h-8 bg-white p-0.5 rounded border border-slate-200 flex items-center justify-center shrink-0">
+                      <img
+                        src={createdTicket?.qrCodeUrl}
+                        alt="Mini QR code"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Details Fields */}
+                <div className="space-y-2 mt-4 text-xs">
+                  <div className="text-left border-b border-slate-100 pb-1">
+                    <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">Guest Name</span>
+                    <span className="font-bold text-slate-800">{createdTicket?.name}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-left border-b border-slate-100 pb-1">
+                      <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">Seats volume</span>
+                      <span className="font-semibold text-slate-700">{createdTicket?.seats} {createdTicket?.seats === 1 ? "Seat" : "Seats"}</span>
+                    </div>
+                    <div className="text-left border-b border-slate-100 pb-1">
+                      <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">Session</span>
+                      <span className="font-semibold text-slate-700">19:30 UTC - 01/16/2026</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-2 border-t border-slate-100 text-left">
+                  <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">GATE ENTRY STATUS</span>
+                  <span className="text-[10px] font-bold text-emerald-600 font-mono flex items-center gap-1 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                    PAID & RSVP VALIDATED
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* CTAs */}
-            <div className="flex gap-3 w-full mt-5">
+            <div className="flex gap-3 w-[360px] max-w-full mt-6 z-20">
               <Button
                 variant="outline"
                 onClick={resetModal}
@@ -379,9 +485,7 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                 Close Ticket
               </Button>
               <Button
-                onClick={() => {
-                  window.print();
-                }}
+                onClick={downloadTicketImage}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl h-10 font-semibold flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(236,72,153,0.3)]"
               >
                 <Download className="w-4 h-4" /> Download Pass

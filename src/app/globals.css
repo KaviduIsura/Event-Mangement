@@ -110,8 +110,8 @@
 /* High Fidelity Ticket Printing Style: isolates the boarding pass card to a single page and completely hides all background elements of the website during PDF download */
 @media print {
   html, body {
-    background: #030014 !important;
-    color: #ffffff !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
@@ -137,14 +137,13 @@
     position: absolute !important;
     left: 50% !important;
     top: 50% !important;
-    transform: translate(-50%, -50%) scale(1.15) !important;
-    width: 440px !important;
+    transform: translate(-50%, -50%) scale(1.1) !important;
+    width: 360px !important;
     max-width: 95% !important;
     margin: 0 !important;
-    border: 1px solid rgba(168, 85, 247, 0.4) !important;
-    background: linear-gradient(to bottom, #110c33, #070417) !important;
-    box-shadow: 0 0 40px rgba(168, 85, 247, 0.2) !important;
-    border-radius: 1rem !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05) !important;
     page-break-inside: avoid !important;
     page-break-after: avoid !important;
   }
