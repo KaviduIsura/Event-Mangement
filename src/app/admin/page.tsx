@@ -35,6 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   getRSVPs,
@@ -135,6 +136,16 @@ export default function AdminDashboard() {
   const [newPerf, setNewPerf] = useState({ name: "", role: "", genre: "", timeSlot: "", avatar: "/images/band.png" });
   const [newSpon, setNewSpon] = useState({ name: "", logo: "", tier: "gold" as "diamond" | "gold" | "silver", contribution: 1000 });
   const [newAnn, setNewAnn] = useState({ title: "", content: "", type: "info" as "info" | "alert" | "success" });
+
+  // Counter Ticket Manual addition states
+  const [isCounterOpen, setIsCounterOpen] = useState(false);
+  const [counterData, setCounterData] = useState({
+    name: "",
+    email: "",
+    ticketType: "general" as "general" | "vip" | "sponsor",
+    seats: 1,
+    innovationSupport: "",
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -341,9 +352,9 @@ export default function AdminDashboard() {
   const totalCheckedIn = rsvps.filter(r => r.checkedIn).reduce((acc, curr) => acc + curr.seats, 0);
   const totalSponsorsContribution = sponsors.reduce((acc, curr) => acc + curr.contribution, 0);
   
-  // Calculate ticket revenue: VIP ($50), Sponsor ($250), General ($10 matches estimated)
+  // Calculate ticket revenue in LKR: VIP (Rs. 15,000), Sponsor (Rs. 75,000), General (Rs. 3,500)
   const ticketRevenue = rsvps.reduce((acc, curr) => {
-    const price = curr.ticketType === "vip" ? 50 : curr.ticketType === "sponsor" ? 250 : 10;
+    const price = curr.ticketType === "vip" ? 15000 : curr.ticketType === "sponsor" ? 75000 : 3500;
     return acc + (price * curr.seats);
   }, 0);
   const totalFunds = ticketRevenue + totalSponsorsContribution;
@@ -359,12 +370,59 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteRSVP = (id: string) => {
-    const updated = deleteRSVP(id);
-    setRsvps(updated);
+    // block deletions under immutable security policies
     toast({
-      title: "Registration Removed",
-      description: `Registration for ticket ${id} has been deleted.`,
+      title: "Action Forbidden",
+      description: "[Security Policy] Confirmed ticketing records are fully immutable and cannot be deleted.",
+      variant: "destructive",
     });
+  };
+
+  const handleCounterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!counterData.name || !counterData.email) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in guest name and email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Save manually using the local store saveRSVP (which validates unique email!)
+      const ticket = saveRSVP({
+        name: counterData.name.trim(),
+        email: counterData.email.trim(),
+        ticketType: counterData.ticketType,
+        seats: counterData.seats,
+        innovationSupport: counterData.innovationSupport || "Counter Purchase ticket booking",
+      });
+
+      // Update state
+      setRsvps(getRSVPs());
+      setIsCounterOpen(false);
+      
+      // Reset form
+      setCounterData({
+        name: "",
+        email: "",
+        ticketType: "general",
+        seats: 1,
+        innovationSupport: "",
+      });
+
+      toast({
+        title: "Ticket Issued!",
+        description: `Successfully issued ticket ${ticket.id} from Counter.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Counter Issue Failed",
+        description: err.message || "Failed to manually issue ticket.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Live verification scanner
@@ -727,29 +785,118 @@ export default function AdminDashboard() {
               <h1 className="text-3xl font-display font-bold">Rhythm Night 2026 Dashboard</h1>
             </div>
             
-            {/* Quick RSVP modal mock trigger */}
+            {/* Counter Sales Ticket Issuer */}
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  // Prepopulate a random mock ticket
-                  saveRSVP({
-                    name: "Simulated Tester",
-                    email: "tester@rhythm.snyth",
-                    ticketType: "vip",
-                    seats: 2,
-                    innovationSupport: "Live simulation click trigger!",
-                  });
-                  setRsvps(getRSVPs());
-                  toast({ title: "Mock Reservation Generated!" });
-                }}
-                className={`rounded-xl text-xs gap-1.5 h-10 ${
-                  theme === "dark" ? "border-purple-500/20 hover:bg-purple-950/20 text-purple-300" : "border-slate-200 bg-white text-slate-600"
-                }`}
-              >
-                <Plus className="w-4 h-4" />
-                Add Mock RSVP
-              </Button>
+              <Dialog open={isCounterOpen} onOpenChange={setIsCounterOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    className="rounded-xl text-xs gap-1.5 h-10 bg-purple-600 hover:bg-purple-500 text-white font-semibold transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Issue Ticket (Counter)
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md bg-[#070417] border border-purple-500/30 text-white rounded-2xl shadow-[0_0_30px_rgba(168,85,247,0.2)] p-6 z-50">
+                  <DialogHeader className="mb-4">
+                    <DialogTitle className="text-xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+                      🎟️ Counter Ticket Sales
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-slate-400 font-light">
+                      Manually issue confirmed attendee tickets directly from the main desk.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <form onSubmit={handleCounterSubmit} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="counterName" className="text-xs text-slate-400">Guest Full Name</Label>
+                      <Input
+                        id="counterName"
+                        value={counterData.name}
+                        onChange={(e) => setCounterData({ ...counterData, name: e.target.value })}
+                        placeholder="e.g. Kavidu Isura"
+                        className="bg-[#0e0a29] border-purple-500/20 text-white rounded-xl focus:border-purple-500/50"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="counterEmail" className="text-xs text-slate-400">Email Address</Label>
+                      <Input
+                        id="counterEmail"
+                        type="email"
+                        value={counterData.email}
+                        onChange={(e) => setCounterData({ ...counterData, email: e.target.value })}
+                        placeholder="e.g. kavidu@mail.com"
+                        className="bg-[#0e0a29] border-purple-500/20 text-white rounded-xl focus:border-purple-500/50"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="counterType" className="text-xs text-slate-400">Ticket Class</Label>
+                        <Select
+                          onValueChange={(value: any) => setCounterData({ ...counterData, ticketType: value })}
+                          defaultValue="general"
+                        >
+                          <SelectTrigger className="bg-[#0e0a29] border-purple-500/20 text-white rounded-xl">
+                            <SelectValue placeholder="Select class" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#070417] border-purple-500/30 text-white">
+                            <SelectItem value="general">🎟️ General (Rs. 3,500)</SelectItem>
+                            <SelectItem value="vip">👑 VIP (Rs. 15,000)</SelectItem>
+                            <SelectItem value="sponsor">💎 Sponsor (Rs. 75,000)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="counterSeats" className="text-xs text-slate-400">Seats Count</Label>
+                        <Select
+                          onValueChange={(value) => setCounterData({ ...counterData, seats: parseInt(value) })}
+                          defaultValue="1"
+                        >
+                          <SelectTrigger className="bg-[#0e0a29] border-purple-500/20 text-white rounded-xl">
+                            <SelectValue placeholder="Quantity" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#070417] border-purple-500/30 text-white">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                              <SelectItem key={num} value={num.toString()}>
+                                {num} {num === 1 ? "Seat" : "Seats"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 flex justify-between items-center">
+                      <span className="text-[10px] text-purple-300 font-semibold uppercase tracking-wider">Total Sales price:</span>
+                      <span className="text-sm font-mono font-bold text-pink-400">
+                        Rs. {(counterData.seats * (counterData.ticketType === "sponsor" ? 75000 : counterData.ticketType === "vip" ? 15000 : 3500)).toLocaleString()} LKR
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="counterSupport" className="text-xs text-slate-400">Support Note (Optional)</Label>
+                      <Textarea
+                        id="counterSupport"
+                        value={counterData.innovationSupport}
+                        onChange={(e) => setCounterData({ ...counterData, innovationSupport: e.target.value })}
+                        placeholder="Innovator motivation / table details..."
+                        className="bg-[#0e0a29] border-purple-500/20 text-white rounded-xl focus:border-purple-500/50 min-h-[50px] resize-none text-xs"
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold h-11 rounded-xl text-xs transition-all duration-300"
+                    >
+                      🎟️ Confirm Sale & Issue Ticket
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
@@ -806,7 +953,7 @@ export default function AdminDashboard() {
                     <Heart className="w-4 h-4 text-pink-400 animate-pulse" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-display font-black">${totalFunds.toLocaleString()}</div>
+                    <div className="text-3xl font-display font-black">Rs. {totalFunds.toLocaleString()}</div>
                     <p className="text-[10px] text-emerald-400 font-medium flex items-center gap-1 mt-1">
                       +100% direct proceeds match active
                     </p>
@@ -856,7 +1003,7 @@ export default function AdminDashboard() {
                     <Award className="w-4 h-4 text-amber-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-display font-black">${totalSponsorsContribution.toLocaleString()}</div>
+                    <div className="text-3xl font-display font-black">Rs. {totalSponsorsContribution.toLocaleString()}</div>
                     <p className="text-[10px] text-slate-400 mt-1 font-light">
                       From {sponsors.length} premium listed companies
                     </p>
@@ -985,7 +1132,7 @@ export default function AdminDashboard() {
                       <TableHead className="font-semibold text-xs uppercase text-slate-400 w-32">Tier</TableHead>
                       <TableHead className="font-semibold text-xs uppercase text-slate-400 text-center w-24">Seats</TableHead>
                       <TableHead className="font-semibold text-xs uppercase text-slate-400 text-center w-36">Entrance Checked</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase text-slate-400 text-right w-24">Actions</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase text-slate-400 text-right w-28">Security</TableHead>
                     </TableRow>
                   </TableHeader>
                   
@@ -1035,14 +1182,10 @@ export default function AdminDashboard() {
                             </button>
                           </TableCell>
 
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              onClick={() => handleDeleteRSVP(row.id)}
-                              className="text-xs text-rose-500 hover:text-rose-400 hover:bg-rose-950/20 p-2 rounded-xl"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                          <TableCell className="text-right pr-4">
+                            <span className="inline-flex items-center gap-1.5 text-[9px] text-slate-400 bg-slate-500/10 border border-slate-500/20 px-2.5 py-1 rounded-full font-mono font-bold tracking-wider">
+                              <Lock className="w-3 h-3 text-slate-400 animate-pulse" /> IMMUTABLE
+                            </span>
                           </TableCell>
                         </TableRow>
                       ))
@@ -1113,13 +1256,9 @@ export default function AdminDashboard() {
                             )}
                           </button>
 
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleDeleteRSVP(row.id)}
-                            className="text-xs text-rose-500 hover:text-rose-400 hover:bg-rose-950/20 p-2 rounded-xl h-8 w-8"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <span className="inline-flex items-center gap-1 text-[8px] text-slate-400 bg-slate-500/10 border border-slate-500/20 px-2 py-0.5 rounded-full font-mono font-bold tracking-wider">
+                            <Lock className="w-2.5 h-2.5 text-slate-400" /> IMMUTABLE
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1329,7 +1468,7 @@ export default function AdminDashboard() {
                           </div>
                           <div className="text-right">
                             <span className="text-xl font-display font-black text-amber-400 block">
-                              ${verifiedTicket.seats * (verifiedTicket.ticketType === "vip" ? 50 : verifiedTicket.ticketType === "sponsor" ? 250 : 10)} USD
+                              Rs. {(verifiedTicket.seats * (verifiedTicket.ticketType === "sponsor" ? 75000 : verifiedTicket.ticketType === "vip" ? 15000 : 3500)).toLocaleString()} LKR
                             </span>
                             <span className="text-[8px] uppercase tracking-widest text-white/40 font-mono">Collect at door</span>
                           </div>
@@ -1510,14 +1649,14 @@ export default function AdminDashboard() {
                               <SelectValue placeholder="Tier" />
                             </SelectTrigger>
                             <SelectContent className="bg-[#0c0827] border-purple-500/30 text-white">
-                              <SelectItem value="diamond">Diamond ($7.5k+)</SelectItem>
-                              <SelectItem value="gold">Gold ($4k+)</SelectItem>
-                              <SelectItem value="silver">Silver ($2k+)</SelectItem>
+                              <SelectItem value="diamond">Diamond (Rs. 3M+)</SelectItem>
+                              <SelectItem value="gold">Gold (Rs. 1.5M+)</SelectItem>
+                              <SelectItem value="silver">Silver (Rs. 600k+)</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-1.5">
-                          <Label htmlFor="sponCont" className="text-xs text-slate-400">Pledge ($ USD)</Label>
+                          <Label htmlFor="sponCont" className="text-xs text-slate-400">Pledge (Rs. LKR)</Label>
                           <Input
                             id="sponCont"
                             type="number"
@@ -1558,7 +1697,7 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex justify-between items-center border-t border-purple-500/10 pt-4 mt-2">
-                      <span className="text-xs font-bold text-cyan-300">${spon.contribution.toLocaleString()}</span>
+                      <span className="text-xs font-bold text-cyan-300">Rs. {spon.contribution.toLocaleString()}</span>
                       <Button
                         variant="ghost"
                         onClick={() => handleDeleteSponsor(spon.id)}

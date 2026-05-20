@@ -122,11 +122,11 @@ const DEFAULT_PERFORMERS: Performer[] = [
 ];
 
 const DEFAULT_SPONSORS: Sponsor[] = [
-  { id: "spon-1", name: "Aether Labs", logo: "⚡ AETHER LABS", tier: "diamond", contribution: 10000 },
-  { id: "spon-2", name: "Apex Venture Capital", logo: "▲ APEX VC", tier: "diamond", contribution: 7500 },
-  { id: "spon-3", name: "CyberNode Systems", logo: "⬡ CYBERNODE", tier: "gold", contribution: 5000 },
-  { id: "spon-4", name: "Quantum Innovations", logo: "❖ QUANTUM", tier: "gold", contribution: 4000 },
-  { id: "spon-5", name: "Nova Softworks", logo: "✦ NOVA", tier: "silver", contribution: 2000 }
+  { id: "spon-1", name: "Aether Labs", logo: "⚡ AETHER LABS", tier: "diamond", contribution: 3000000 },
+  { id: "spon-2", name: "Apex Venture Capital", logo: "▲ APEX VC", tier: "diamond", contribution: 2250000 },
+  { id: "spon-3", name: "CyberNode Systems", logo: "⬡ CYBERNODE", tier: "gold", contribution: 1500000 },
+  { id: "spon-4", name: "Quantum Innovations", logo: "❖ QUANTUM", tier: "gold", contribution: 1200000 },
+  { id: "spon-5", name: "Nova Softworks", logo: "✦ NOVA", tier: "silver", contribution: 600000 }
 ];
 
 const DEFAULT_GALLERY: GalleryItem[] = [
@@ -156,13 +156,25 @@ const DEFAULT_ANNOUNCEMENTS: Announcement[] = [
 async function postDBUpdate(sliceName: string, sliceData: any) {
   if (typeof window === "undefined") return;
   try {
-    await fetch("/api/db", {
+    const adminAuth = sessionStorage.getItem("rhythm_admin_auth") === "true";
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (adminAuth) {
+      headers["x-admin-key"] = "admin123";
+    }
+
+    const res = await fetch("/api/db", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ [sliceName]: sliceData })
     });
+
+    if (!res.ok) {
+      const errRes = await res.json();
+      throw new Error(errRes.error || "Server sync mutation rejected.");
+    }
   } catch (error) {
     console.error(`Failed to sync ${sliceName} background update:`, error);
+    throw error;
   }
 }
 
@@ -170,7 +182,20 @@ async function postDBUpdate(sliceName: string, sliceData: any) {
 export async function syncWithBackend(): Promise<boolean> {
   if (typeof window === "undefined") return false;
   try {
-    const res = await fetch("/api/db");
+    const adminAuth = sessionStorage.getItem("rhythm_admin_auth") === "true";
+    const headers: Record<string, string> = {};
+    if (adminAuth) {
+      headers["x-admin-key"] = "admin123";
+    }
+
+    let url = "/api/db";
+    const params = new URLSearchParams(window.location.search);
+    const ticketId = params.get("ticketId");
+    if (ticketId) {
+      url += `?ticketId=${encodeURIComponent(ticketId)}`;
+    }
+
+    const res = await fetch(url, { headers });
     const json = await res.json();
     if (json.success && json.data) {
       const { rsvps, performers, sponsors, gallery, announcements } = json.data;
@@ -206,6 +231,15 @@ export function getRSVPs(): RSVP[] {
 
 export function saveRSVP(rsvp: Omit<RSVP, "id" | "checkedIn" | "qrCodeUrl" | "createdAt">): RSVP {
   const rsvps = getRSVPs();
+
+  // Enforce Single Registration Constraint: "only one email can registe one time tickets"
+  const emailExists = rsvps.some(
+    r => r.email.trim().toLowerCase() === rsvp.email.trim().toLowerCase()
+  );
+  if (emailExists) {
+    throw new Error("This email address has already reserved a seat.");
+  }
+
   const id = `RN-${Math.floor(1000 + Math.random() * 9000)}`;
   let origin = "https://rhythm-event.vercel.app";
   if (typeof window !== "undefined") {
@@ -236,11 +270,9 @@ export function updateRSVPCheckIn(id: string, checkedIn: boolean): RSVP[] {
 }
 
 export function deleteRSVP(id: string): RSVP[] {
-  const rsvps = getRSVPs();
-  const updated = rsvps.filter(r => r.id !== id);
-  localStorage.setItem("rhythm_night_rsvps", JSON.stringify(updated));
-  postDBUpdate("rsvps", updated);
-  return updated;
+  // manual deletion is disabled to guarantee fully tamper-proof ticket logging
+  console.warn(`[Security Alert] Attempted manual deletion of ticket ${id} blocked.`);
+  return getRSVPs();
 }
 
 export function getPerformers(): Performer[] {

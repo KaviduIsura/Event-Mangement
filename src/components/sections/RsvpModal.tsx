@@ -136,11 +136,11 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
           title: "Seat Reserved!",
           description: "Your boarding ticket has been generated successfully.",
         });
-      } catch (err) {
+      } catch (err: any) {
         setIsSubmitting(false);
         toast({
-          title: "System Error",
-          description: "Failed to reserve your seat. Please try again.",
+          title: "Registration Failed",
+          description: err.message || "Failed to reserve your seat. Please try again.",
           variant: "destructive",
         });
       }
@@ -256,7 +256,7 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                     <span className="text-[10px] text-white/50 block text-left">{t.desc}</span>
                   </div>
                   <span className="text-xs text-purple-300 font-medium font-display mt-2">
-                    {t.type === "general" ? "Donation" : t.type === "vip" ? "$50" : "$250"}
+                    {t.type === "general" ? "Rs. 3,500" : t.type === "vip" ? "Rs. 15,000" : "Rs. 75,000"}
                   </span>
                   {ticketType === t.type && (
                     <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-purple-400" />
@@ -317,7 +317,7 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                     <CreditCard className="w-3.5 h-3.5" /> Entrance Gate Fee
                   </Label>
                   <div className="bg-pink-500/10 border border-pink-500/30 rounded-lg h-10 px-3 flex items-center text-xs text-pink-400 font-bold">
-                    Pay at Door: {ticketType === "general" ? `$${formData.seats * 10} USD (Or donation)` : `$${formData.seats * (ticketType === "vip" ? 50 : 250)} USD`}
+                    Pay at Door: Rs. {(formData.seats * (ticketType === "sponsor" ? 75000 : ticketType === "vip" ? 15000 : 3500)).toLocaleString()} LKR
                   </div>
                 </div>
               </div>
@@ -462,6 +462,13 @@ export default function RsvpModal({ isOpen, onOpenChange, defaultTicketType = "g
                       <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">Session</span>
                       <span className="font-semibold text-slate-700">19:30 UTC - 01/16/2026</span>
                     </div>
+                  </div>
+
+                  <div className="text-left border-b border-slate-100 pb-1 col-span-2">
+                    <span className="text-[8px] uppercase tracking-wider text-slate-400 font-mono block">Entrance Gate Fee</span>
+                    <span className="font-bold text-emerald-600 font-mono">
+                      Rs. {((createdTicket?.seats || 1) * (createdTicket?.ticketType === "sponsor" ? 75000 : createdTicket?.ticketType === "vip" ? 15000 : 3500)).toLocaleString()} LKR
+                    </span>
                   </div>
                 </div>
 
