@@ -1876,7 +1876,7 @@ export default function AdminDashboard() {
       </div>
       {/* GORGEOUS TICKET PREVIEW MODAL FOR ADMIN */}
       <Dialog open={selectedTicketForPreview !== null} onOpenChange={(open) => { if (!open) setSelectedTicketForPreview(null); }}>
-        <DialogContent className="max-w-md bg-[#070417]/95 border border-purple-500/30 text-white rounded-2xl backdrop-blur-2xl p-6 flex flex-col items-center justify-center overflow-y-auto max-h-[90vh] z-50">
+        <DialogContent data-lenis-prevent className="max-w-md w-[95vw] max-h-[95vh] overflow-y-auto bg-[#070417]/95 border border-purple-500/30 backdrop-blur-2xl p-6 flex flex-col items-center z-50 scrollbar-thin scrollbar-thumb-purple-500/20 text-white rounded-2xl">
           <DialogHeader className="w-full text-center mb-2">
             <DialogTitle className="text-lg font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
               🎫 Entrance Pass Preview
